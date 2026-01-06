@@ -1,0 +1,324 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* SeniKu E-Portfolio Design System
+   A colorful & playful design for art education
+   All colors MUST be HSL.
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    /* Base */
+    --background: 40 33% 98%;
+    --foreground: 240 10% 20%;
+
+    /* Cards & Surfaces */
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 20%;
+
+    /* Primary - Vibrant Coral */
+    --primary: 12 90% 62%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 12 90% 72%;
+
+    /* Secondary - Fresh Teal */
+    --secondary: 174 62% 47%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Accent - Sunny Yellow */
+    --accent: 45 100% 60%;
+    --accent-foreground: 240 10% 20%;
+
+    /* Muted */
+    --muted: 40 20% 94%;
+    --muted-foreground: 240 5% 45%;
+
+    /* Destructive - Soft Red */
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders & Inputs */
+    --border: 40 20% 88%;
+    --input: 40 20% 88%;
+    --ring: 12 90% 62%;
+
+    --radius: 1rem;
+
+    /* Extended Palette */
+    --purple: 270 70% 65%;
+    --purple-foreground: 0 0% 100%;
+    --pink: 330 80% 65%;
+    --pink-foreground: 0 0% 100%;
+    --green: 145 60% 45%;
+    --green-foreground: 0 0% 100%;
+    --blue: 210 85% 55%;
+    --blue-foreground: 0 0% 100%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(12 90% 62%), hsl(330 80% 65%));
+    --gradient-secondary: linear-gradient(135deg, hsl(174 62% 47%), hsl(210 85% 55%));
+    --gradient-accent: linear-gradient(135deg, hsl(45 100% 60%), hsl(12 90% 62%));
+    --gradient-hero: linear-gradient(135deg, hsl(270 70% 65%), hsl(210 85% 55%), hsl(174 62% 47%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(40 33% 96%));
+    
+    /* Shadows */
+    --shadow-sm: 0 2px 8px -2px hsl(240 10% 20% / 0.08);
+    --shadow-md: 0 4px 16px -4px hsl(240 10% 20% / 0.12);
+    --shadow-lg: 0 12px 32px -8px hsl(240 10% 20% / 0.16);
+    --shadow-glow: 0 8px 32px -8px hsl(12 90% 62% / 0.35);
+    --shadow-card: 0 4px 20px -4px hsl(240 10% 20% / 0.1);
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 10% 20%;
+    --sidebar-primary: 12 90% 62%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 40 20% 94%;
+    --sidebar-accent-foreground: 240 10% 20%;
+    --sidebar-border: 40 20% 88%;
+    --sidebar-ring: 12 90% 62%;
+  }
+
+  .dark {
+    --background: 240 15% 10%;
+    --foreground: 40 20% 95%;
+
+    --card: 240 15% 14%;
+    --card-foreground: 40 20% 95%;
+
+    --popover: 240 15% 14%;
+    --popover-foreground: 40 20% 95%;
+
+    --primary: 12 85% 58%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 12 85% 68%;
+
+    --secondary: 174 55% 42%;
+    --secondary-foreground: 0 0% 100%;
+
+    --accent: 45 95% 55%;
+    --accent-foreground: 240 10% 10%;
+
+    --muted: 240 12% 20%;
+    --muted-foreground: 40 10% 60%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 12% 22%;
+    --input: 240 12% 22%;
+    --ring: 12 85% 58%;
+
+    --purple: 270 65% 60%;
+    --pink: 330 75% 60%;
+    --green: 145 55% 40%;
+    --blue: 210 80% 50%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(12 85% 58%), hsl(330 75% 60%));
+    --gradient-secondary: linear-gradient(135deg, hsl(174 55% 42%), hsl(210 80% 50%));
+    --gradient-card: linear-gradient(145deg, hsl(240 15% 16%), hsl(240 15% 12%));
+
+    --shadow-glow: 0 8px 32px -8px hsl(12 85% 58% / 0.4);
+    --shadow-card: 0 4px 20px -4px hsl(0 0% 0% / 0.3);
+
+    --sidebar-background: 240 15% 12%;
+    --sidebar-foreground: 40 20% 95%;
+    --sidebar-primary: 12 85% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 12% 20%;
+    --sidebar-accent-foreground: 40 20% 95%;
+    --sidebar-border: 240 12% 22%;
+    --sidebar-ring: 12 85% 58%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-bold;
+  }
+}
+
+@layer components {
+  /* Card Variants */
+  .card-playful {
+    @apply rounded-2xl bg-card p-6 transition-all duration-300;
+    box-shadow: var(--shadow-card);
+  }
+
+  .card-playful:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .card-gradient {
+    background: var(--gradient-card);
+  }
+
+  /* Button Glow Effect */
+  .btn-glow {
+    @apply relative overflow-hidden;
+  }
+
+  .btn-glow::after {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+    background: var(--gradient-primary);
+    filter: blur(20px);
+    z-index: -1;
+  }
+
+  .btn-glow:hover::after {
+    @apply opacity-60;
+  }
+
+  /* Floating Animation */
+  .float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  /* Gradient Text */
+  .text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-secondary {
+    background: var(--gradient-secondary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Blob Shapes */
+  .blob {
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+  }
+
+  .blob-animate {
+    animation: blob 8s ease-in-out infinite;
+  }
+
+  @keyframes blob {
+    0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+    50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+  }
+
+  /* Pattern Background */
+  .pattern-dots {
+    background-image: radial-gradient(circle, hsl(var(--primary) / 0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  /* Avatar Ring */
+  .avatar-ring {
+    @apply ring-4 ring-offset-2 ring-offset-background;
+    --tw-ring-color: hsl(var(--primary));
+  }
+
+  /* Badge Colors */
+  .badge-coral { @apply bg-primary text-primary-foreground; }
+  .badge-teal { @apply bg-secondary text-secondary-foreground; }
+  .badge-yellow { @apply bg-accent text-accent-foreground; }
+  .badge-purple { @apply bg-purple text-purple-foreground; }
+  .badge-pink { @apply bg-pink text-pink-foreground; }
+  .badge-green { @apply bg-green text-green-foreground; }
+  .badge-blue { @apply bg-blue text-blue-foreground; }
+
+  /* Playful Underline */
+  .underline-playful {
+    @apply relative inline-block;
+  }
+
+  .underline-playful::after {
+    content: '';
+    @apply absolute -bottom-1 left-0 w-full h-1 rounded-full;
+    background: var(--gradient-accent);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.3s ease;
+  }
+
+  .underline-playful:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  /* Smooth Scroll */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-muted rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary/30 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary/50;
+  }
+}
+
+@layer utilities {
+  .animate-in {
+    animation: animate-in 0.5s ease-out forwards;
+  }
+
+  @keyframes animate-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .delay-100 { animation-delay: 100ms; }
+  .delay-200 { animation-delay: 200ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-400 { animation-delay: 400ms; }
+  .delay-500 { animation-delay: 500ms; }
+
+  /* Stagger children animation */
+  .stagger-children > * {
+    @apply animate-in;
+  }
+
+  .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger-children > *:nth-child(2) { animation-delay: 100ms; }
+  .stagger-children > *:nth-child(3) { animation-delay: 200ms; }
+  .stagger-children > *:nth-child(4) { animation-delay: 300ms; }
+  .stagger-children > *:nth-child(5) { animation-delay: 400ms; }
+  .stagger-children > *:nth-child(6) { animation-delay: 500ms; }
+}
