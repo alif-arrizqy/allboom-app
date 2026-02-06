@@ -18,7 +18,7 @@ export const assignmentService = {
     page?: number;
     limit?: number;
     status?: 'DRAFT' | 'ACTIVE' | 'COMPLETED';
-    categoryId?: string;
+    mediaTypeId?: string;
     classId?: string;
     search?: string;
   }): Promise<ApiResponse<PaginatedResponse<Assignment>>> {

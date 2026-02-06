@@ -17,7 +17,7 @@ export const portfolioService = {
   async getPortfolios(params?: {
     page?: number;
     limit?: number;
-    categoryId?: string;
+    mediaTypeId?: string;
     studentId?: string;
     classId?: string;
     search?: string;
@@ -49,8 +49,8 @@ export const portfolioService = {
       formData.append('description', data.description);
     }
     formData.append('image', data.image);
-    if (data.categoryId) {
-      formData.append('categoryId', data.categoryId);
+    if (data.mediaTypeId) {
+      formData.append('mediaTypeId', data.mediaTypeId);
     }
     if (data.isPublic !== undefined) {
       formData.append('isPublic', data.isPublic.toString());
@@ -85,8 +85,8 @@ export const portfolioService = {
     if (data.image) {
       formData.append('image', data.image);
     }
-    if (data.categoryId) {
-      formData.append('categoryId', data.categoryId);
+    if (data.mediaTypeId) {
+      formData.append('mediaTypeId', data.mediaTypeId);
     }
     if (data.isPublic !== undefined) {
       formData.append('isPublic', data.isPublic.toString());
