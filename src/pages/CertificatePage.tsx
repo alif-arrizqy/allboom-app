@@ -11,7 +11,7 @@ import {
     Certificate,
     type CertificateData,
 } from "@/components/certificate/Certificate";
-import html2pdf from "html2pdf.js";
+import { generateCertificatePDF } from "@/components/certificate/PDFKitGenerator";
 
 export const CertificatePage: React.FC = () => {
     const { token } = useParams<{ token: string }>();
@@ -65,33 +65,41 @@ export const CertificatePage: React.FC = () => {
     };
 
     const handleDownload = async () => {
-        const certificateElement = certificateRef.current;
-        if (!certificateElement) return;
+        if (!certificate) return;
 
         try {
             setDownloading(true);
 
-            // Configure PDF options for landscape A4
-            const opt: any = {
-                margin: [0.3, 0.3, 0.3, 0.3],
-                filename: `sertifikat-${token}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { 
-                    scale: 2,
-                    useCORS: true,
-                    logging: false,
-                    letterRendering: true
-                },
-                jsPDF: { 
-                    unit: 'in', 
-                    format: [11, 8.5], // Landscape A4
-                    orientation: 'landscape'
-                },
-                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            const certificateData: CertificateData = {
+                id: certificate.token,
+                recipientName: certificate.studentName,
+                artworkTitle: certificate.artworkTitle,
+                media: certificate.mediaTypeName || "Mixed Media",
+                dimensions: certificate.artworkSize
+                    ? certificate.artworkSize.toString()
+                    : "-",
+                year: certificate.yearCreated.toString(),
+                description: certificate.description,
+                issuedDate: formatDate(new Date()),
+                verificationUrl: getVerificationUrl(),
+                imageUrl: certificate.imageUrl || undefined,
             };
 
-            // Generate and download PDF
-            await html2pdf().set(opt).from(certificateElement).save();
+            // Generate the PDF blob using PDFKit
+            const blob = await generateCertificatePDF(certificateData);
+
+            // Create target filename
+            const filename = `sertifikat-${certificate.studentName.toLowerCase().replace(/\s+/g, "-")}-${certificate.token.substring(0, 8)}.pdf`;
+
+            // Download the blob
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
 
             toast({
                 title: "Berhasil",
@@ -197,7 +205,10 @@ export const CertificatePage: React.FC = () => {
             </div>
 
             {/* Certificate Container */}
-            <div className="relative w-full max-w-[11in] mx-auto" ref={certificateRef}>
+            <div
+                className="relative w-full max-w-[11in] mx-auto"
+                ref={certificateRef}
+            >
                 <Certificate data={certificateData} />
             </div>
 

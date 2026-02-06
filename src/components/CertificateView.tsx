@@ -17,6 +17,7 @@ import {
     Certificate,
     type CertificateData,
 } from "@/components/certificate/Certificate";
+import { generateCertificatePDF } from "@/components/certificate/PDFKitGenerator";
 
 interface CertificateViewProps {
     isOpen: boolean;
@@ -36,15 +37,10 @@ export const CertificateView: React.FC<CertificateViewProps> = ({
     const [certificate, setCertificate] =
         useState<ServiceCertificateData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [downloading, setDownloading] = useState(false);
     const { toast } = useToast();
 
-    React.useEffect(() => {
-        if (isOpen && token) {
-            loadCertificate();
-        }
-    }, [isOpen, token]);
-
-    const loadCertificate = async () => {
+    const loadCertificate = React.useCallback(async () => {
         try {
             setLoading(true);
             const response = await certificateService.getCertificateData(token);
@@ -62,30 +58,13 @@ export const CertificateView: React.FC<CertificateViewProps> = ({
         } finally {
             setLoading(false);
         }
-    };
+    }, [token, toast]);
 
-    const handleDownload = async () => {
-        try {
-            const html = await certificateService.getCertificateHTML(token);
-            const element = document.createElement("a");
-            const file = new Blob([html], { type: "text/html" });
-            element.href = URL.createObjectURL(file);
-            element.download = `sertifikat-${studentName?.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}.html`;
-            document.body.appendChild(element);
-            element.click();
-            document.body.removeChild(element);
-        } catch (error) {
-            toast({
-                title: "Error",
-                description: "Gagal mendownload sertifikat",
-                variant: "destructive",
-            });
+    React.useEffect(() => {
+        if (isOpen && token) {
+            loadCertificate();
         }
-    };
-
-    const handleOpenInNewTab = () => {
-        certificateService.openCertificateInNewTab(token);
-    };
+    }, [isOpen, token, loadCertificate]);
 
     const certificateData: CertificateData | null = certificate
         ? {
@@ -97,17 +76,8 @@ export const CertificateView: React.FC<CertificateViewProps> = ({
                   ? `${certificate.artworkSize} cm`
                   : "-",
               year: certificate.yearCreated.toString(),
-              quote: certificate.description,
+              description: certificate.description,
               issuedDate: new Date().toLocaleDateString("id-ID", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-              }),
-              validUntil: new Date(
-                  certificate.yearCreated + 3,
-                  11,
-                  31,
-              ).toLocaleDateString("id-ID", {
                   day: "numeric",
                   month: "long",
                   year: "numeric",
@@ -116,6 +86,48 @@ export const CertificateView: React.FC<CertificateViewProps> = ({
               imageUrl: certificate.imageUrl,
           }
         : null;
+
+    const handleDownload = async () => {
+        if (!certificateData) return;
+
+        try {
+            setDownloading(true);
+
+            // Generate the PDF blob using PDFKit
+            const blob = await generateCertificatePDF(certificateData);
+
+            // Create target filename
+            const filename = `sertifikat-${studentName?.toLowerCase().replace(/\s+/g, "-")}-${token.substring(0, 8)}.pdf`;
+
+            // Download the blob
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            toast({
+                title: "Berhasil",
+                description: "Sertifikat berhasil didownload sebagai PDF",
+            });
+        } catch (error) {
+            console.error("Error generating PDF:", error);
+            toast({
+                title: "Error",
+                description: "Gagal mendownload sertifikat",
+                variant: "destructive",
+            });
+        } finally {
+            setDownloading(false);
+        }
+    };
+
+    const handleOpenInNewTab = () => {
+        certificateService.openCertificateInNewTab(token);
+    };
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -147,10 +159,20 @@ export const CertificateView: React.FC<CertificateViewProps> = ({
                                 <Button
                                     variant="outline"
                                     onClick={handleDownload}
+                                    disabled={downloading}
                                     className="gap-2 bg-white/80 backdrop-blur"
                                 >
-                                    <Download className="w-4 h-4" />
-                                    Download
+                                    {downloading ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Downloading...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Download className="w-4 h-4" />
+                                            Download PDF
+                                        </>
+                                    )}
                                 </Button>
                                 <Button
                                     onClick={handleOpenInNewTab}
