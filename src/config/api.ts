@@ -6,13 +6,13 @@ import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'ax
 
 /**
  * Get API base URL with validation
- * Ensures the URL always ends with /seniku/api/v1
+ * Ensures the URL always ends with /allboom/api/v1
  */
 function getApiBaseUrl(): string {
   const envUrl = import.meta.env.VITE_API_BASE_URL;
   
   // Default for development
-  const defaultUrl = 'http://localhost:8989/seniku/api/v1';
+  const defaultUrl = 'http://localhost:8989/allboom/api/v1';
   
   if (!envUrl) {
     return defaultUrl;
@@ -23,12 +23,12 @@ function getApiBaseUrl(): string {
   
   // If URL doesn't end with /api/v1, append it
   if (!baseUrl.endsWith('/api/v1')) {
-    // If URL ends with /seniku, just append /api/v1
-    if (baseUrl.endsWith('/seniku')) {
+    // If URL ends with /allboom, just append /api/v1
+    if (baseUrl.endsWith('/allboom')) {
       baseUrl = `${baseUrl}/api/v1`;
     } else {
-      // Otherwise, append /seniku/api/v1
-      baseUrl = `${baseUrl}/seniku/api/v1`;
+      // Otherwise, append /allboom/api/v1
+      baseUrl = `${baseUrl}/allboom/api/v1`;
     }
   }
   
