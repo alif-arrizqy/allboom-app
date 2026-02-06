@@ -1,4 +1,4 @@
-# Seniku E-Portfolio
+# Allboom App
 
 Aplikasi E-Portfolio untuk pembelajaran seni digital.
 
@@ -27,7 +27,7 @@ Proyek ini dibangun dengan:
 git clone <YOUR_GIT_URL>
 
 # Step 2: Masuk ke direktori proyek
-cd seniku-app-Eportfolio
+cd allboom-app
 
 # Step 3: Install dependencies
 npm install
@@ -49,7 +49,7 @@ Aplikasi akan berjalan di `http://localhost:8009`
 ## Struktur Proyek
 
 ```
-seniku-app-Eportfolio/
+allboom-app/
 ├── src/
 │   ├── components/     # Komponen UI
 │   ├── pages/          # Halaman aplikasi
