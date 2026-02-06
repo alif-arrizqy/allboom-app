@@ -15,7 +15,6 @@ export interface Certificate {
   artworkSize?: string;
   yearCreated?: number;
   description?: string;
-  token: string;
   createdAt: string;
 }
 
