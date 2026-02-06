@@ -2128,10 +2128,10 @@ const Assignments = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="submission-description">Catatan (opsional)</Label>
+              <Label htmlFor="submission-description">Deskripsi gambar atau karya</Label>
               <Textarea 
                 id="submission-description"
-                placeholder="Catatan untuk guru..." 
+                placeholder="Deskripsi gambar atau karya yang akan diupload..." 
                 className="rounded-xl"
                 value={submissionFormData.description}
                 onChange={(e) => setSubmissionFormData({ ...submissionFormData, description: e.target.value })}
@@ -2683,11 +2683,22 @@ const Assignments = () => {
           <form onSubmit={handleSaveEditSubmission} className="space-y-4">
             <div className="space-y-2">
               <Label>Judul Karya</Label>
-              <Input placeholder="Masukkan judul karya" className="rounded-xl" required />
+              <Input 
+                placeholder="Masukkan judul karya" 
+                className="rounded-xl" 
+                value={submissionFormData.title}
+                onChange={(e) => setSubmissionFormData({ ...submissionFormData, title: e.target.value })}
+                required 
+              />
             </div>
             <div className="space-y-2">
-              <Label>Catatan (opsional)</Label>
-              <Textarea placeholder="Catatan untuk guru..." className="rounded-xl" />
+              <Label>Deskripsi gambar atau karya</Label>
+              <Textarea 
+                placeholder="Deskripsi gambar atau karya yang akan diupload..." 
+                className="rounded-xl"
+                value={submissionFormData.description}
+                onChange={(e) => setSubmissionFormData({ ...submissionFormData, description: e.target.value })}
+              />
             </div>
             <div className="space-y-2">
               <Label>Upload Karya Baru (opsional)</Label>
