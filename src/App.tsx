@@ -12,6 +12,7 @@ import Profile from "./pages/Profile";
 import Students from "./pages/Students";
 import Assignments from "./pages/Assignments";
 import Export from "./pages/Export";
+import CertificatePage from "./pages/CertificatePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
           <Route path="/profile" element={<DashboardLayout />}>
             <Route index element={<Profile />} />
           </Route>
+          <Route path="/certificates/:token" element={<CertificatePage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
