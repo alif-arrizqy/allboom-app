@@ -81,8 +81,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
           </div>
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="text-lg font-display font-bold text-gradient">SeniKu</span>
-              <span className="text-xs text-muted-foreground">E-Portfolio</span>
+              <span className="text-lg font-display font-bold text-gradient">Allboom</span>
             </div>
           )}
         </Link>

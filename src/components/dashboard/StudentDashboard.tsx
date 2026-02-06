@@ -147,7 +147,7 @@ const StudentDashboard = ({ user }: StudentDashboardProps) => {
                       <div className="absolute bottom-0 left-0 right-0 p-4">
                         <p className="text-primary-foreground font-semibold">{work.title}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs text-primary-foreground/80">{work.category}</span>
+                          <span className="text-xs text-primary-foreground/80">{work.mediaType?.name || '-'}</span>
                           {work.grade !== null && (
                             <>
                               <span className="text-xs text-primary-foreground/60">•</span>
