@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useNavigate } from "react-router-dom";
 import { FrontendUser } from "@/layouts/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,9 +45,10 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { assignmentService } from "@/services/assignment.service";
 import { submissionService } from "@/services/submission.service";
-import { categoryService } from "@/services/category.service";
+import { certificateService } from "@/services/certificate.service";
+import { mediaTypeService } from "@/services/mediaType.service";
 import { classService } from "@/services/class.service";
-import type { Assignment, Submission, Category, Class, CreateAssignmentRequest, UpdateAssignmentRequest, CreateSubmissionRequest, UpdateSubmissionRequest } from "@/types/api";
+import type { Assignment, Submission, MediaType, Class, CreateAssignmentRequest, UpdateAssignmentRequest, CreateSubmissionRequest, UpdateSubmissionRequest } from "@/types/api";
 
 // Submission status types: pending, revision, graded
 // pending = waiting for teacher review
@@ -148,7 +149,7 @@ const Assignments = () => {
   // Data states
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [mediaTypes, setMediaTypes] = useState<MediaType[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -157,7 +158,7 @@ const Assignments = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteAction, setDeleteAction] = useState<"delete" | "draft">("delete");
-  const [editAssignmentData, setEditAssignmentData] = useState({ title: "", description: "", deadline: "", categoryId: "", classIds: [] as string[], status: "ACTIVE" as "DRAFT" | "ACTIVE" | "COMPLETED" });
+  const [editAssignmentData, setEditAssignmentData] = useState({ title: "", description: "", deadline: "", mediaTypeId: "", artworkSize: "", classIds: [] as string[], status: "ACTIVE" as "DRAFT" | "ACTIVE" | "COMPLETED" });
   
   // Edit/Cancel states for student
   const [isEditSubmissionDialogOpen, setIsEditSubmissionDialogOpen] = useState(false);
@@ -166,10 +167,13 @@ const Assignments = () => {
   const [submissionImagePreview, setSubmissionImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   
+  const navigate = useNavigate();
+  const [certificateLoading, setCertificateLoading] = useState(false);
+  
   // Category management
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [newCategoryName, setNewCategoryName] = useState<string>("");
-  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [selectedMediaType, setSelectedMediaType] = useState<string>("");
+  const [newMediaTypeName, setNewMediaTypeName] = useState<string>("");
+  const [isAddingMediaType, setIsAddingMediaType] = useState(false);
   
   // Bulk select states
   const [selectedAssignments, setSelectedAssignments] = useState<string[]>([]);
@@ -264,16 +268,16 @@ const Assignments = () => {
     }
   }, [isTeacher, user.id]);
 
-  // Fetch categories
-  const fetchCategories = useCallback(async () => {
+  // Fetch media types
+  const fetchMediaTypes = useCallback(async () => {
     try {
-      const response = await categoryService.getCategories({ isActive: true });
+      const response = await mediaTypeService.getMediaTypes({ isActive: true });
       if (response.success && response.data) {
         const data = Array.isArray(response.data) ? response.data : response.data.data || [];
-        setCategories(data);
+        setMediaTypes(data);
       }
     } catch (error) {
-      console.error("Error fetching categories:", error);
+      console.error("Error fetching media types:", error);
     }
   }, []);
 
@@ -295,9 +299,9 @@ const Assignments = () => {
   useEffect(() => {
     fetchAssignments();
     fetchSubmissions();
-    fetchCategories();
+    fetchMediaTypes();
     fetchClasses();
-  }, [fetchAssignments, fetchSubmissions, fetchCategories, fetchClasses]);
+  }, [fetchAssignments, fetchSubmissions, fetchMediaTypes, fetchClasses]);
 
   // Get submissions for a specific assignment
   const getSubmissionsForAssignment = (assignmentId: string): Submission[] => {
@@ -412,10 +416,10 @@ const Assignments = () => {
 
   const handleCreateAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCategory || editAssignmentData.classIds.length === 0) {
+    if (!selectedMediaType || editAssignmentData.classIds.length === 0) {
       toast({
         title: "Data Tidak Lengkap",
-        description: "Kategori dan kelas harus dipilih",
+        description: "Tipe Media dan kelas harus dipilih",
         variant: "destructive",
       });
       return;
@@ -426,7 +430,8 @@ const Assignments = () => {
       const data: CreateAssignmentRequest = {
         title: editAssignmentData.title,
         description: editAssignmentData.description,
-        categoryId: selectedCategory,
+        mediaTypeId: selectedMediaType,
+        artworkSize: editAssignmentData.artworkSize || undefined,
         deadline: new Date(editAssignmentData.deadline).toISOString(),
         classIds: editAssignmentData.classIds,
         status: editAssignmentData.status, // Use selected status
@@ -439,8 +444,8 @@ const Assignments = () => {
           description: "Tugas baru berhasil dibuat dan dikirim ke siswa",
         });
         setIsCreateDialogOpen(false);
-        setEditAssignmentData({ title: "", description: "", deadline: "", categoryId: "", classIds: [], status: "ACTIVE" });
-        setSelectedCategory("");
+        setEditAssignmentData({ title: "", description: "", deadline: "", mediaTypeId: "", artworkSize: "", classIds: [], status: "ACTIVE" });
+        setSelectedMediaType("");
         fetchAssignments();
       }
     } catch (error) {
@@ -599,11 +604,12 @@ const Assignments = () => {
       title: assignment.title,
       description: assignment.description,
       deadline: assignment.deadline.split('T')[0], // Format for date input
-      categoryId: assignment.categoryId,
+      mediaTypeId: assignment.mediaTypeId,
+      artworkSize: assignment.artworkSize || "",
       classIds: assignment.classes?.map(ac => ac.class.id) || [],
       status: assignment.status || "ACTIVE",
     });
-    setSelectedCategory(assignment.categoryId);
+    setSelectedMediaType(assignment.mediaTypeId);
     setIsEditDialogOpen(true);
   };
 
@@ -616,7 +622,8 @@ const Assignments = () => {
       const data: UpdateAssignmentRequest = {
         title: editAssignmentData.title,
         description: editAssignmentData.description,
-        categoryId: editAssignmentData.categoryId || undefined,
+        mediaTypeId: editAssignmentData.mediaTypeId || undefined,
+        artworkSize: editAssignmentData.artworkSize || undefined,
         deadline: new Date(editAssignmentData.deadline).toISOString(),
         classIds: editAssignmentData.classIds.length > 0 ? editAssignmentData.classIds : undefined,
         status: editAssignmentData.status,
@@ -630,7 +637,7 @@ const Assignments = () => {
         });
         setIsEditDialogOpen(false);
         setSelectedAssignment(null);
-        setEditAssignmentData({ title: "", description: "", deadline: "", categoryId: "", classIds: [], status: "ACTIVE" });
+        setEditAssignmentData({ title: "", description: "", deadline: "", mediaTypeId: "", artworkSize: "", classIds: [], status: "ACTIVE" });
         fetchAssignments();
       }
     } catch (error) {
@@ -690,30 +697,29 @@ const Assignments = () => {
     }
   };
 
-  // Category Management
-  const handleAddCategory = async () => {
-    if (!newCategoryName.trim()) return;
+  // Media Type Management
+  const handleAddMediaType = async () => {
+    if (!newMediaTypeName.trim()) return;
 
     try {
       setSubmitting(true);
-      const response = await categoryService.createCategory({
-        name: newCategoryName.trim(),
+      const response = await mediaTypeService.createMediaType({
+        name: newMediaTypeName.trim(),
         description: "",
-        icon: "📁",
       });
 
       if (response.success && response.data) {
         toast({
-          title: "Kategori Ditambahkan! ✅",
-          description: `Kategori "${newCategoryName.trim()}" berhasil ditambahkan`,
+          title: "Media Type Ditambahkan! ✅",
+          description: `Media Type "${newMediaTypeName.trim()}" berhasil ditambahkan`,
         });
-        setSelectedCategory(response.data.category.id);
-        setNewCategoryName("");
-        setIsAddingCategory(false);
-        fetchCategories();
+        setSelectedMediaType(response.data.mediaType.id);
+        setNewMediaTypeName("");
+        setIsAddingMediaType(false);
+        fetchMediaTypes();
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Gagal menambahkan kategori";
+      const errorMessage = error instanceof Error ? error.message : "Gagal menambahkan media type";
       toast({
         title: "Error",
         description: errorMessage,
@@ -724,11 +730,11 @@ const Assignments = () => {
     }
   };
 
-  const handleDeleteCategory = async (categoryId: string) => {
-    if (categories.length <= 1) {
+  const handleDeleteMediaType = async (mediaTypeId: string) => {
+    if (mediaTypes.length <= 1) {
       toast({
         title: "Tidak Bisa Menghapus",
-        description: "Minimal harus ada 1 kategori",
+        description: "Minimal harus ada 1 media type",
         variant: "destructive",
       });
       return;
@@ -736,19 +742,19 @@ const Assignments = () => {
 
     try {
       setSubmitting(true);
-      const response = await categoryService.deleteCategory(categoryId, false);
+      const response = await mediaTypeService.deleteMediaType(mediaTypeId);
       if (response.success) {
         toast({
-          title: "Kategori Dihapus! 🗑️",
-          description: "Kategori berhasil dihapus",
+          title: "Media Type Dihapus! 🗑️",
+          description: "Media Type berhasil dihapus",
         });
-        if (selectedCategory === categoryId) {
-          setSelectedCategory("");
+        if (selectedMediaType === mediaTypeId) {
+          setSelectedMediaType("");
         }
-        fetchCategories();
+        fetchMediaTypes();
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Gagal menghapus kategori";
+      const errorMessage = error instanceof Error ? error.message : "Gagal menghapus media type";
       toast({
         title: "Error",
         description: errorMessage,
@@ -1182,19 +1188,19 @@ const Assignments = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Kategori</Label>
+                  <Label>Tipe Media</Label>
                   <div className="flex gap-2">
-                    <Select value={selectedCategory} onValueChange={setSelectedCategory} required>
+                    <Select value={selectedMediaType} onValueChange={setSelectedMediaType} required>
                       <SelectTrigger className="rounded-xl flex-1">
-                        <SelectValue placeholder="Pilih kategori" />
+                        <SelectValue placeholder="Pilih tipe media" />
                       </SelectTrigger>
                       <SelectContent>
-                        {categories.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                        {mediaTypes.map((mt) => (
+                          <SelectItem key={mt.id} value={mt.id}>{mt.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <Popover open={isAddingCategory} onOpenChange={setIsAddingCategory}>
+                    <Popover open={isAddingMediaType} onOpenChange={setIsAddingMediaType}>
                       <PopoverTrigger asChild>
                         <Button type="button" variant="outline" size="icon" className="rounded-xl">
                           <Plus className="w-4 h-4" />
@@ -1202,21 +1208,21 @@ const Assignments = () => {
                       </PopoverTrigger>
                       <PopoverContent className="w-64 p-3">
                         <div className="space-y-2">
-                          <Label className="text-xs">Tambah Kategori Baru</Label>
+                          <Label className="text-xs">Tambah Tipe Media Baru</Label>
                           <div className="flex gap-2">
                             <Input
-                              placeholder="Nama kategori"
-                              value={newCategoryName}
-                              onChange={(e) => setNewCategoryName(e.target.value)}
+                              placeholder="Nama tipe media"
+                              value={newMediaTypeName}
+                              onChange={(e) => setNewMediaTypeName(e.target.value)}
                               className="rounded-lg h-9"
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                   e.preventDefault();
-                                  handleAddCategory();
+                                  handleAddMediaType();
                                 }
                               }}
                             />
-                            <Button type="button" size="sm" onClick={handleAddCategory} className="rounded-lg" disabled={submitting}>
+                            <Button type="button" size="sm" onClick={handleAddMediaType} className="rounded-lg" disabled={submitting}>
                               <Plus className="w-4 h-4" />
                             </Button>
                           </div>
@@ -1224,6 +1230,16 @@ const Assignments = () => {
                       </PopoverContent>
                     </Popover>
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Ukuran Karya (opsional)</Label>
+                  <Input 
+                    placeholder="cth: 30x40cm" 
+                    className="rounded-xl" 
+                    value={editAssignmentData.artworkSize}
+                    onChange={(e) => setEditAssignmentData({ ...editAssignmentData, artworkSize: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">Contoh: 30x40cm, A4, dll</p>
                 </div>
                 {isTeacher && classes.length > 0 && (
                   <div className="space-y-2">
@@ -1304,7 +1320,7 @@ const Assignments = () => {
                   <Button type="button" variant="outline" className="flex-1" onClick={() => setIsCreateDialogOpen(false)} disabled={submitting}>
                     Batal
                   </Button>
-                  <Button type="submit" variant="gradient" className="flex-1" disabled={!selectedCategory || editAssignmentData.classIds.length === 0 || submitting}>
+                  <Button type="submit" variant="gradient" className="flex-1" disabled={!selectedMediaType || editAssignmentData.classIds.length === 0 || submitting}>
                     {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                     Buat Tugas
                   </Button>
@@ -1434,10 +1450,10 @@ const Assignments = () => {
                         {assignment.submissions || 0}/{assignment.total || 0} dikumpulkan
                       </div>
                     )}
-                    {assignment.category && (
+                    {assignment.mediaType && (
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Tag className="w-4 h-4" />
-                        {typeof assignment.category === 'string' ? assignment.category : assignment.category.name}
+                        {typeof assignment.mediaType === 'string' ? assignment.mediaType : assignment.mediaType.name}
                       </div>
                     )}
                     {/* Teacher and Class Info for Students */}
@@ -1483,13 +1499,13 @@ const Assignments = () => {
                             id: assignment.id,
                             title: assignment.title,
                             description: assignment.description,
-                            categoryId: assignment.categoryId,
+                            mediaTypeId: assignment.mediaTypeId,
                             deadline: assignment.deadline,
                             status: isAssignmentWithSubmissions(assignment) ? assignment.status : 'ACTIVE',
                             createdById: assignment.createdById,
                             createdAt: assignment.createdAt,
                             updatedAt: assignment.updatedAt,
-                            category: assignment.category,
+                            mediaType: assignment.mediaType,
                             createdBy: assignment.createdBy,
                             classes: assignment.classes,
                           };
@@ -2240,6 +2256,69 @@ const Assignments = () => {
                 </p>
               )}
 
+              {/* Certificate Button */}
+              <Button 
+                variant="gradient" 
+                className="w-full gap-2"
+                onClick={async () => {
+                  try {
+                    setCertificateLoading(true);
+                    const currentSubmission = submissions.find(s => 
+                      s.studentId === user.id && s.assignmentId === selectedStudentAssignment.id
+                    );
+                    
+                    if (!currentSubmission) {
+                      toast({
+                        title: "Error",
+                        description: "Submission tidak ditemukan",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+
+                    // Try to create certificate (will return existing if already exists)
+                    const response = await certificateService.createCertificate(currentSubmission.id);
+                    
+                    if (response.success && response.data?.certificate) {
+                      const certToken = response.data.certificate.token;
+                      toast({
+                        title: "Sertifikat Siap!",
+                        description: "Membuka halaman sertifikat...",
+                      });
+                      navigate(`/certificates/${certToken}`);
+                    } else {
+                      toast({
+                        title: "Error",
+                        description: "Gagal membuat sertifikat",
+                        variant: "destructive",
+                      });
+                    }
+                  } catch (error) {
+                    const errorMessage = error instanceof Error ? error.message : "Gagal membuat sertifikat";
+                    toast({
+                      title: "Error",
+                      description: errorMessage,
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setCertificateLoading(false);
+                  }
+                }}
+                disabled={certificateLoading}
+              >
+                {certificateLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Membuat Sertifikat...
+                  </>
+                ) : (
+                  <>
+                    <Star className="w-4 h-4" />
+                    Dapatkan Sertifikat
+                  </>
+                )}
+              </Button>
+
               <Button variant="outline" className="w-full" onClick={() => setIsFeedbackDialogOpen(false)}>
                 Tutup
               </Button>
@@ -2406,22 +2485,22 @@ const Assignments = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label>Kategori</Label>
+              <Label>Tipe Media</Label>
               <div className="flex gap-2">
-                <Select value={selectedCategory} onValueChange={(value) => {
-                  setSelectedCategory(value);
-                  setEditAssignmentData({ ...editAssignmentData, categoryId: value });
+                <Select value={selectedMediaType} onValueChange={(value) => {
+                  setSelectedMediaType(value);
+                  setEditAssignmentData({ ...editAssignmentData, mediaTypeId: value });
                 }} required>
                   <SelectTrigger className="rounded-xl flex-1">
                     <SelectValue placeholder="Pilih kategori" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                    {mediaTypes.map((mt) => (
+                      <SelectItem key={mt.id} value={mt.id}>{mt.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <Popover open={isAddingCategory} onOpenChange={setIsAddingCategory}>
+                <Popover open={isAddingMediaType} onOpenChange={setIsAddingMediaType}>
                   <PopoverTrigger asChild>
                     <Button type="button" variant="outline" size="icon" className="rounded-xl">
                       <Plus className="w-4 h-4" />
@@ -2429,21 +2508,21 @@ const Assignments = () => {
                   </PopoverTrigger>
                   <PopoverContent className="w-64 p-3">
                     <div className="space-y-2">
-                      <Label className="text-xs">Tambah Kategori Baru</Label>
+                      <Label className="text-xs">Tambah Tipe Media Baru</Label>
                       <div className="flex gap-2">
                         <Input
-                          placeholder="Nama kategori"
-                          value={newCategoryName}
-                          onChange={(e) => setNewCategoryName(e.target.value)}
+                          placeholder="Nama tipe media"
+                          value={newMediaTypeName}
+                          onChange={(e) => setNewMediaTypeName(e.target.value)}
                           className="rounded-lg h-9"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                               e.preventDefault();
-                              handleAddCategory();
+                              handleAddMediaType();
                             }
                           }}
                         />
-                        <Button type="button" size="sm" onClick={handleAddCategory} className="rounded-lg">
+                        <Button type="button" size="sm" onClick={handleAddMediaType} className="rounded-lg">
                           <Plus className="w-4 h-4" />
                         </Button>
                       </div>
@@ -2498,7 +2577,7 @@ const Assignments = () => {
               <Button type="button" variant="outline" className="flex-1" onClick={() => setIsEditDialogOpen(false)}>
                 Batal
               </Button>
-              <Button type="submit" variant="gradient" className="flex-1" disabled={!selectedCategory}>
+              <Button type="submit" variant="gradient" className="flex-1" disabled={!selectedMediaType}>
                 Simpan Perubahan
               </Button>
             </div>

@@ -35,10 +35,10 @@ const Portfolio = () => {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Semua");
+  const [selectedMediaType, setSelectedMediaType] = useState("Semua");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedWork, setSelectedWork] = useState<Portfolio | null>(null);
-  const [categories, setCategories] = useState<string[]>(["Semua"]);
+  const [mediaTypes, setMediaTypes] = useState<string[]>(["Semua"]);
 
   const isStudent = user.role === "student";
 
@@ -63,13 +63,13 @@ const Portfolio = () => {
           }
           
           setPortfolios(portfoliosData);
-          // Extract unique categories from assignment.category.name
-          const uniqueCategories = ["Semua", ...Array.from(new Set(
+          // Extract unique media types from assignment.mediaType.name
+          const uniqueMediaTypes = ["Semua", ...Array.from(new Set(
             portfoliosData
-              .map(p => p.assignment?.category?.name || p.category)
+              .map(p => p.assignment?.mediaType?.name || p.mediaType?.name)
               .filter(Boolean)
           ))];
-          setCategories(uniqueCategories);
+          setMediaTypes(uniqueMediaTypes);
         }
       } catch (error) {
         console.error("Error fetching portfolios:", error);
@@ -92,9 +92,9 @@ const Portfolio = () => {
   const filteredPortfolios = portfolios.filter((portfolio) => {
     const matchesSearch = portfolio.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          portfolio.student?.name?.toLowerCase().includes(searchQuery.toLowerCase());
-    const portfolioCategory = portfolio.assignment?.category?.name || portfolio.category;
-    const matchesCategory = selectedCategory === "Semua" || portfolioCategory === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const portfolioMediaType = portfolio.assignment?.mediaType?.name || portfolio.mediaType?.name;
+    const matchesMediaType = selectedMediaType === "Semua" || portfolioMediaType === selectedMediaType;
+    return matchesSearch && matchesMediaType;
   });
 
   const getGradeColor = (grade: number | string) => {
@@ -138,16 +138,16 @@ const Portfolio = () => {
               />
             </div>
 
-            {/* Category Tabs */}
-            <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full md:w-auto">
+            {/* Media Type Tabs */}
+            <Tabs value={selectedMediaType} onValueChange={setSelectedMediaType} className="w-full md:w-auto">
               <TabsList className="h-10 rounded-xl bg-muted/50 overflow-x-auto flex-nowrap">
-                {categories.map((cat) => (
+                {mediaTypes.map((mt) => (
                   <TabsTrigger
-                    key={cat}
-                    value={cat}
+                    key={mt}
+                    value={mt}
                     className="rounded-lg whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                   >
-                    {cat}
+                    {mt}
                   </TabsTrigger>
                 ))}
               </TabsList>
@@ -224,10 +224,10 @@ const Portfolio = () => {
                   <span className="line-clamp-1">{portfolio.assignment?.title || "-"}</span>
                 </div>
                 
-                {/* Date and Category */}
+                {/* Date and Media Type */}
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-lg">
-                    {portfolio.category || "-"}
+                    {portfolio.mediaType?.name || "-"}
                   </span>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Calendar className="w-3 h-3" />
@@ -279,7 +279,7 @@ const Portfolio = () => {
                     </div>
                     
                     <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
-                      <span className="bg-muted px-2 py-1 rounded-lg text-xs">{portfolio.category || "-"}</span>
+                      <span className="bg-muted px-2 py-1 rounded-lg text-xs">{portfolio.mediaType?.name || "-"}</span>
                       <div className="flex items-center gap-1 text-xs">
                         <Calendar className="w-3 h-3" />
                         {portfolio.submittedAt ? new Date(portfolio.submittedAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "-"}
@@ -342,7 +342,7 @@ const Portfolio = () => {
                   <Star className="w-5 h-5 text-accent" />
                   <div>
                     <p className="text-xs text-muted-foreground">Kategori</p>
-                    <p className="font-semibold text-sm">{selectedWork.category || "-"}</p>
+                    <p className="font-semibold text-sm">{selectedWork.mediaType?.name || "-"}</p>
                   </div>
                 </div>
               </div>

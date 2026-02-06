@@ -189,7 +189,7 @@ const Auth = () => {
       if (response.success && response.data) {
         toast({
           title: "Akun Dibuat! 🎉",
-          description: "Selamat bergabung di SeniKu. Silakan login.",
+          description: "Selamat bergabung di Allboom. Silakan login.",
         });
         setIsLogin(true);
         setIdentifier(role === "TEACHER" ? nip : nis);
@@ -242,7 +242,7 @@ const Auth = () => {
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-primary to-pink mb-6 shadow-glow">
               <Palette className="w-10 h-10 text-primary-foreground" />
             </div>
-            <h1 className="text-4xl font-display font-bold text-gradient mb-2">SeniKu</h1>
+            <h1 className="text-4xl font-display font-bold text-gradient mb-2">Allboom</h1>
             <p className="text-muted-foreground font-medium">E-Portfolio Seni Digital</p>
           </div>
 
