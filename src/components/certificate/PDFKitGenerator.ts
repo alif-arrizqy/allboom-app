@@ -54,13 +54,13 @@ export const generateCertificatePDF = async (
 
     // Subtle dot pattern (simplified)
     doc.setFillColor(0, 0, 0);
-    (doc as any).setFillOpacity(0.04);
+    doc.setGState((doc as any).GState({ opacity: 0.04 }));
     for (let x = 0; x < 792; x += 40) {
         for (let y = 0; y < 612; y += 40) {
             doc.circle(x + 20, y + 20, 1, "F");
         }
     }
-    (doc as any).setFillOpacity(1);
+    doc.setGState((doc as any).GState({ opacity: 1 }));
 
     // === CORNER DECORATIONS ===
     // Top-left
@@ -69,10 +69,10 @@ export const generateCertificatePDF = async (
     doc.line(40, 40, 110, 40); // top
     doc.line(40, 40, 40, 110); // left
     doc.setLineWidth(2);
-    (doc as any).setDrawOpacity(0.6);
+    doc.setGState((doc as any).GState({ opacity: 0.6 }));
     doc.line(46, 46, 104, 46);
     doc.line(46, 46, 46, 104);
-    (doc as any).setDrawOpacity(1);
+    doc.setGState((doc as any).GState({ opacity: 1 }));
 
     // Top-right
     doc.setDrawColor(251, 113, 133); // rose400
@@ -80,10 +80,10 @@ export const generateCertificatePDF = async (
     doc.line(682, 40, 752, 40);
     doc.line(752, 40, 752, 110);
     doc.setLineWidth(2);
-    (doc as any).setDrawOpacity(0.6);
+    doc.setGState((doc as any).GState({ opacity: 0.6 }));
     doc.line(688, 46, 746, 46);
     doc.line(746, 46, 746, 104);
-    (doc as any).setDrawOpacity(1);
+    doc.setGState((doc as any).GState({ opacity: 1 }));
 
     // Bottom-left
     doc.setDrawColor(251, 191, 36); // amber400
@@ -91,10 +91,10 @@ export const generateCertificatePDF = async (
     doc.line(40, 572, 110, 572);
     doc.line(40, 502, 40, 572);
     doc.setLineWidth(2);
-    (doc as any).setDrawOpacity(0.6);
+    doc.setGState((doc as any).GState({ opacity: 0.6 }));
     doc.line(46, 566, 104, 566);
     doc.line(46, 508, 46, 566);
-    (doc as any).setDrawOpacity(1);
+    doc.setGState((doc as any).GState({ opacity: 1 }));
 
     // Bottom-right
     doc.setDrawColor(251, 113, 133); // rose400
@@ -102,10 +102,10 @@ export const generateCertificatePDF = async (
     doc.line(682, 572, 752, 572);
     doc.line(752, 502, 752, 572);
     doc.setLineWidth(2);
-    (doc as any).setDrawOpacity(0.6);
+    doc.setGState((doc as any).GState({ opacity: 0.6 }));
     doc.line(688, 566, 746, 566);
     doc.line(746, 508, 746, 566);
-    (doc as any).setDrawOpacity(1);
+    doc.setGState((doc as any).GState({ opacity: 1 }));
 
     // === HEADER ===
     // Title
@@ -212,9 +212,9 @@ export const generateCertificatePDF = async (
     // RIGHT COLUMN - Details Panel
     // Background panel
     doc.setFillColor(255, 251, 235); // amber-50
-    (doc as any).setFillOpacity(0.5);
+    doc.setGState((doc as any).GState({ opacity: 0.5 }));
     doc.roundedRect(rightX, topY, 300, 280, 15, 15, "F");
-    (doc as any).setFillOpacity(1);
+    doc.setGState((doc as any).GState({ opacity: 1 }));
     doc.setDrawColor(254, 243, 199);
     doc.setLineWidth(1);
     doc.roundedRect(rightX, topY, 300, 280, 15, 15, "S");
@@ -230,9 +230,9 @@ export const generateCertificatePDF = async (
     ) => {
         // Box
         doc.setFillColor(255, 255, 255);
-        (doc as any).setFillOpacity(0.6);
+        doc.setGState((doc as any).GState({ opacity: 0.6 }));
         doc.roundedRect(rightX + 15, y, 270, 45, 8, 8, "F");
-        (doc as any).setFillOpacity(1);
+        doc.setGState((doc as any).GState({ opacity: 1 }));
 
         // Left accent line
         doc.setDrawColor(borderR, borderG, borderB);
