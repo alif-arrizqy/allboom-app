@@ -158,7 +158,7 @@ const Assignments = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteAction, setDeleteAction] = useState<"delete" | "draft">("delete");
-  const [editAssignmentData, setEditAssignmentData] = useState({ title: "", description: "", deadline: "", mediaTypeId: "", artworkSize: "", classIds: [] as string[], status: "ACTIVE" as "DRAFT" | "ACTIVE" | "COMPLETED" });
+  const [editAssignmentData, setEditAssignmentData] = useState({ title: "", description: "", deadline: "", mediaTypeId: "", artworkSize: "", classIds: [] as string[], status: "" as "" | "DRAFT" | "ACTIVE" | "COMPLETED" });
   
   // Edit/Cancel states for student
   const [isEditSubmissionDialogOpen, setIsEditSubmissionDialogOpen] = useState(false);
@@ -444,7 +444,7 @@ const Assignments = () => {
           description: "Tugas baru berhasil dibuat dan dikirim ke siswa",
         });
         setIsCreateDialogOpen(false);
-        setEditAssignmentData({ title: "", description: "", deadline: "", mediaTypeId: "", artworkSize: "", classIds: [], status: "ACTIVE" });
+        setEditAssignmentData({ title: "", description: "", deadline: "", mediaTypeId: "", artworkSize: "", classIds: [], status: "" });
         setSelectedMediaType("");
         fetchAssignments();
       }
@@ -637,7 +637,7 @@ const Assignments = () => {
         });
         setIsEditDialogOpen(false);
         setSelectedAssignment(null);
-        setEditAssignmentData({ title: "", description: "", deadline: "", mediaTypeId: "", artworkSize: "", classIds: [], status: "ACTIVE" });
+        setEditAssignmentData({ title: "", description: "", deadline: "", mediaTypeId: "", artworkSize: "", classIds: [], status: "" });
         fetchAssignments();
       }
     } catch (error) {
@@ -1285,34 +1285,19 @@ const Assignments = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Status</Label>
+                  <Label>Status Tugas</Label>
                   <Select 
                     value={editAssignmentData.status} 
                     onValueChange={(value) => setEditAssignmentData({ ...editAssignmentData, status: value as "DRAFT" | "ACTIVE" | "COMPLETED" })}
                     required
                   >
                     <SelectTrigger className="rounded-xl">
-                      <SelectValue placeholder="Pilih status" />
+                      <SelectValue placeholder="Pilih status tugas" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="DRAFT">
-                        <div className="flex flex-col">
-                          <span className="font-semibold">DRAFT</span>
-                          <span className="text-xs text-muted-foreground">Status draft, belum diaktifkan</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="ACTIVE">
-                        <div className="flex flex-col">
-                          <span className="font-semibold">ACTIVE</span>
-                          <span className="text-xs text-muted-foreground">Status aktif, tugas sedang berjalan</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="COMPLETED">
-                        <div className="flex flex-col">
-                          <span className="font-semibold">COMPLETED</span>
-                          <span className="text-xs text-muted-foreground">Status selesai</span>
-                        </div>
-                      </SelectItem>
+                      <SelectItem value="DRAFT">DRAFT</SelectItem>
+                      <SelectItem value="ACTIVE">ACTIVE</SelectItem>
+                      <SelectItem value="COMPLETED">COMPLETED</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -2552,24 +2537,9 @@ const Assignments = () => {
                   <SelectValue placeholder="Pilih status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="DRAFT">
-                    <div className="flex flex-col">
-                      <span className="font-semibold">DRAFT</span>
-                      <span className="text-xs text-muted-foreground">Status draft, belum diaktifkan</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="ACTIVE">
-                    <div className="flex flex-col">
-                      <span className="font-semibold">ACTIVE</span>
-                      <span className="text-xs text-muted-foreground">Status aktif, tugas sedang berjalan</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="COMPLETED">
-                    <div className="flex flex-col">
-                      <span className="font-semibold">COMPLETED</span>
-                      <span className="text-xs text-muted-foreground">Status selesai</span>
-                    </div>
-                  </SelectItem>
+                  <SelectItem value="DRAFT">DRAFT</SelectItem>
+                  <SelectItem value="ACTIVE">ACTIVE</SelectItem>
+                  <SelectItem value="COMPLETED">COMPLETED</SelectItem>
                 </SelectContent>
               </Select>
             </div>
