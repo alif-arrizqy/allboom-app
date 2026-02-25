@@ -14,6 +14,33 @@ import { userService } from "@/services/user.service";
 import { dashboardService } from "@/services/dashboard.service";
 import type { UpdateUserRequest, User } from "@/types/api";
 
+const compressImage = (file: File): Promise<File> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const MAX_SIZE = 800;
+      let { width, height } = img;
+      if (width > MAX_SIZE || height > MAX_SIZE) {
+        const ratio = Math.min(MAX_SIZE / width, MAX_SIZE / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => resolve(blob ? new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' }) : file),
+        'image/jpeg',
+        0.8
+      );
+    };
+    img.src = url;
+  });
+};
+
 const Profile = () => {
   const { user: contextUser } = useOutletContext<{ user: FrontendUser }>();
   const { toast } = useToast();
@@ -103,15 +130,16 @@ const Profile = () => {
     fetchUserData();
   }, [toast]);
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setAvatarFile(file);
+      const compressed = await compressImage(file);
+      setAvatarFile(compressed);
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(compressed);
     }
   };
 
@@ -237,14 +265,6 @@ const Profile = () => {
                     className="hidden"
                   />
                 </label>
-              )}
-              {!isEditing && (
-                <button 
-                  className="absolute bottom-0 right-0 w-10 h-10 bg-primary rounded-full flex items-center justify-center text-primary-foreground shadow-md hover:bg-primary/90 transition-colors"
-                  disabled
-                >
-                  <Camera className="w-5 h-5" />
-                </button>
               )}
             </div>
           </div>

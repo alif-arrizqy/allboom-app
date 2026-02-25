@@ -95,6 +95,7 @@ export const userService = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        timeout: 120000, // 2 minutes for file uploads
       });
       return response.data;
     } else {
