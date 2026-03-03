@@ -13,14 +13,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  Plus, 
-  Search, 
-  ClipboardList, 
-  Clock, 
-  CheckCircle, 
-  AlertCircle, 
-  Calendar, 
+import {
+  Plus,
+  Search,
+  ClipboardList,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Calendar,
   Users,
   Image,
   Upload,
@@ -40,7 +40,10 @@ import {
   Power,
   CheckSquare,
   Square,
-  Loader2
+  Loader2,
+  FileText,
+  Link,
+  ExternalLink
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { assignmentService } from "@/services/assignment.service";
@@ -159,6 +162,17 @@ const Assignments = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteAction, setDeleteAction] = useState<"delete" | "draft">("delete");
   const [editAssignmentData, setEditAssignmentData] = useState({ title: "", description: "", deadline: "", mediaTypeId: "", artworkSize: "", classIds: [] as string[], status: "" as "" | "DRAFT" | "ACTIVE" | "COMPLETED" });
+
+  // Student detail dialog
+  const [isStudentDetailDialogOpen, setIsStudentDetailDialogOpen] = useState(false);
+
+  // Materi states
+  const [materiInputType, setMateriInputType] = useState<"none" | "file" | "link">("none");
+  const [materiFile, setMateriFile] = useState<File | null>(null);
+  const [materiFileName, setMateriFileName] = useState<string>("");
+  const [materiLinkUrl, setMateriLinkUrl] = useState<string>("");
+  const [materiUploading, setMateriUploading] = useState(false);
+  const materiFileInputRef = useRef<HTMLInputElement | null>(null);
   
   // Edit/Cancel states for student
   const [isEditSubmissionDialogOpen, setIsEditSubmissionDialogOpen] = useState(false);
@@ -414,6 +428,14 @@ const Assignments = () => {
       return matchesSearch;
     });
 
+  const resetMateriState = () => {
+    setMateriInputType("none");
+    setMateriFile(null);
+    setMateriFileName("");
+    setMateriLinkUrl("");
+    if (materiFileInputRef.current) materiFileInputRef.current.value = '';
+  };
+
   const handleCreateAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedMediaType || editAssignmentData.classIds.length === 0) {
@@ -425,16 +447,52 @@ const Assignments = () => {
       return;
     }
 
+    // Validate materi link if provided
+    if (materiInputType === "link" && materiLinkUrl.trim()) {
+      try {
+        new URL(materiLinkUrl.trim());
+      } catch {
+        toast({
+          title: "URL Tidak Valid",
+          description: "Masukkan URL yang valid untuk link materi",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     try {
       setSubmitting(true);
+
+      // Upload materi file first if selected
+      let resolvedMateriUrl: string | undefined;
+      let resolvedMateriType: "FILE" | "LINK" | undefined;
+
+      if (materiInputType === "file" && materiFile) {
+        setMateriUploading(true);
+        const uploadResponse = await assignmentService.uploadMateriFile(materiFile);
+        setMateriUploading(false);
+        if (!uploadResponse.success) {
+          toast({ title: "Gagal Upload Materi", description: "Gagal mengupload file materi", variant: "destructive" });
+          return;
+        }
+        resolvedMateriUrl = uploadResponse.data?.materiUrl;
+        resolvedMateriType = "FILE";
+      } else if (materiInputType === "link" && materiLinkUrl.trim()) {
+        resolvedMateriUrl = materiLinkUrl.trim();
+        resolvedMateriType = "LINK";
+      }
+
       const data: CreateAssignmentRequest = {
         title: editAssignmentData.title,
         description: editAssignmentData.description,
         mediaTypeId: selectedMediaType,
         artworkSize: editAssignmentData.artworkSize || undefined,
+        materiUrl: resolvedMateriUrl,
+        materiType: resolvedMateriType,
         deadline: new Date(editAssignmentData.deadline).toISOString(),
         classIds: editAssignmentData.classIds,
-        status: editAssignmentData.status, // Use selected status
+        status: editAssignmentData.status,
       };
 
       const response = await assignmentService.createAssignment(data);
@@ -446,6 +504,7 @@ const Assignments = () => {
         setIsCreateDialogOpen(false);
         setEditAssignmentData({ title: "", description: "", deadline: "", mediaTypeId: "", artworkSize: "", classIds: [], status: "" });
         setSelectedMediaType("");
+        resetMateriState();
         fetchAssignments();
       }
     } catch (error) {
@@ -457,6 +516,7 @@ const Assignments = () => {
       });
     } finally {
       setSubmitting(false);
+      setMateriUploading(false);
     }
   };
 
@@ -610,6 +670,16 @@ const Assignments = () => {
       status: assignment.status || "ACTIVE",
     });
     setSelectedMediaType(assignment.mediaTypeId);
+    // Populate materi state
+    if (assignment.materiType === "LINK" && assignment.materiUrl) {
+      setMateriInputType("link");
+      setMateriLinkUrl(assignment.materiUrl);
+    } else if (assignment.materiType === "FILE" && assignment.materiUrl) {
+      setMateriInputType("file");
+      setMateriFileName(assignment.materiUrl.split('/').pop() || "file");
+    } else {
+      resetMateriState();
+    }
     setIsEditDialogOpen(true);
   };
 
@@ -617,13 +687,53 @@ const Assignments = () => {
     e.preventDefault();
     if (!selectedAssignment) return;
 
+    // Validate materi link if provided
+    if (materiInputType === "link" && materiLinkUrl.trim()) {
+      try {
+        new URL(materiLinkUrl.trim());
+      } catch {
+        toast({ title: "URL Tidak Valid", description: "Masukkan URL yang valid untuk link materi", variant: "destructive" });
+        return;
+      }
+    }
+
     try {
       setSubmitting(true);
+
+      // Upload new materi file if changed
+      let resolvedMateriUrl: string | null | undefined;
+      let resolvedMateriType: "FILE" | "LINK" | null | undefined;
+
+      if (materiInputType === "file" && materiFile) {
+        // New file selected
+        setMateriUploading(true);
+        const uploadResponse = await assignmentService.uploadMateriFile(materiFile);
+        setMateriUploading(false);
+        if (!uploadResponse.success) {
+          toast({ title: "Gagal Upload Materi", description: "Gagal mengupload file materi", variant: "destructive" });
+          return;
+        }
+        resolvedMateriUrl = uploadResponse.data?.materiUrl;
+        resolvedMateriType = "FILE";
+      } else if (materiInputType === "file" && !materiFile && selectedAssignment.materiType === "FILE") {
+        // Keep existing file URL
+        resolvedMateriUrl = selectedAssignment.materiUrl || undefined;
+        resolvedMateriType = "FILE";
+      } else if (materiInputType === "link" && materiLinkUrl.trim()) {
+        resolvedMateriUrl = materiLinkUrl.trim();
+        resolvedMateriType = "LINK";
+      } else if (materiInputType === "none") {
+        resolvedMateriUrl = null;
+        resolvedMateriType = null;
+      }
+
       const data: UpdateAssignmentRequest = {
         title: editAssignmentData.title,
         description: editAssignmentData.description,
         mediaTypeId: editAssignmentData.mediaTypeId || undefined,
         artworkSize: editAssignmentData.artworkSize || undefined,
+        materiUrl: resolvedMateriUrl,
+        materiType: resolvedMateriType,
         deadline: new Date(editAssignmentData.deadline).toISOString(),
         classIds: editAssignmentData.classIds.length > 0 ? editAssignmentData.classIds : undefined,
         status: editAssignmentData.status,
@@ -638,6 +748,7 @@ const Assignments = () => {
         setIsEditDialogOpen(false);
         setSelectedAssignment(null);
         setEditAssignmentData({ title: "", description: "", deadline: "", mediaTypeId: "", artworkSize: "", classIds: [], status: "" });
+        resetMateriState();
         fetchAssignments();
       }
     } catch (error) {
@@ -649,6 +760,7 @@ const Assignments = () => {
       });
     } finally {
       setSubmitting(false);
+      setMateriUploading(false);
     }
   };
 
@@ -1089,6 +1201,118 @@ const Assignments = () => {
     return assignment.studentSubmissions?.filter((s: Submission) => s.status === "REVISION").length || 0;
   };
 
+  // Helper: render materi badge for assignment cards
+  const renderMateriBadge = (assignment: { materiUrl?: string | null; materiType?: string | null }) => {
+    if (!assignment.materiUrl) return null;
+    return (
+      <a
+        href={assignment.materiUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors w-fit"
+      >
+        {assignment.materiType === "FILE" ? (
+          <><FileText className="w-3 h-3" />Materi</>
+        ) : (
+          <><Link className="w-3 h-3" />Materi</>
+        )}
+        <ExternalLink className="w-3 h-3 ml-0.5" />
+      </a>
+    );
+  };
+
+  // Helper: render materi form field
+  const renderMateriField = () => (
+    <div className="space-y-2">
+      <Label>Materi (opsional)</Label>
+      <p className="text-xs text-muted-foreground">Upload file PPT, DOC, PDF atau tambahkan link Google Drive / YouTube</p>
+      {/* Toggle buttons */}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => { setMateriInputType("none"); setMateriFile(null); setMateriFileName(""); setMateriLinkUrl(""); if (materiFileInputRef.current) materiFileInputRef.current.value = ''; }}
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-medium border transition-all ${materiInputType === "none" ? "bg-primary text-primary-foreground border-primary" : "bg-muted border-border hover:border-primary/50"}`}
+        >
+          Tidak Ada
+        </button>
+        <button
+          type="button"
+          onClick={() => { setMateriInputType("file"); setMateriLinkUrl(""); }}
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-medium border transition-all flex items-center justify-center gap-1 ${materiInputType === "file" ? "bg-primary text-primary-foreground border-primary" : "bg-muted border-border hover:border-primary/50"}`}
+        >
+          <FileText className="w-3.5 h-3.5" /> Upload File
+        </button>
+        <button
+          type="button"
+          onClick={() => { setMateriInputType("link"); setMateriFile(null); setMateriFileName(""); if (materiFileInputRef.current) materiFileInputRef.current.value = ''; }}
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-medium border transition-all flex items-center justify-center gap-1 ${materiInputType === "link" ? "bg-primary text-primary-foreground border-primary" : "bg-muted border-border hover:border-primary/50"}`}
+        >
+          <Link className="w-3.5 h-3.5" /> Link
+        </button>
+      </div>
+
+      {/* File upload area */}
+      {materiInputType === "file" && (
+        <div>
+          <input
+            type="file"
+            accept=".pdf,.doc,.docx,.ppt,.pptx"
+            className="hidden"
+            ref={materiFileInputRef}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                setMateriFile(file);
+                setMateriFileName(file.name);
+              }
+            }}
+          />
+          <div
+            className="border-2 border-dashed border-border rounded-xl p-4 text-center hover:border-primary transition-colors cursor-pointer"
+            onClick={() => materiFileInputRef.current?.click()}
+          >
+            {materiFile || materiFileName ? (
+              <div className="flex items-center justify-center gap-2">
+                <FileText className="w-5 h-5 text-primary" />
+                <span className="text-sm font-medium text-primary truncate max-w-[200px]">{materiFile?.name || materiFileName}</span>
+                <button
+                  type="button"
+                  className="text-muted-foreground hover:text-destructive"
+                  onClick={(e) => { e.stopPropagation(); setMateriFile(null); setMateriFileName(""); if (materiFileInputRef.current) materiFileInputRef.current.value = ''; }}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <Upload className="w-6 h-6 mx-auto text-muted-foreground mb-1" />
+                <p className="text-xs text-muted-foreground">Klik untuk pilih file</p>
+                <p className="text-xs text-muted-foreground">PDF, DOC, DOCX, PPT, PPTX (Max 20MB)</p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Link input area */}
+      {materiInputType === "link" && (
+        <div className="space-y-1">
+          <div className="relative">
+            <Link className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="https://drive.google.com/... atau https://youtube.com/..."
+              className="rounded-xl pl-10"
+              value={materiLinkUrl}
+              onChange={(e) => setMateriLinkUrl(e.target.value)}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">Contoh: Google Drive, YouTube, atau link file lainnya</p>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -1152,14 +1376,14 @@ const Assignments = () => {
                   <CheckSquare className="w-4 h-4 mr-2" />
                   Pilih
                 </Button>
-                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <Dialog open={isCreateDialogOpen} onOpenChange={(open) => { setIsCreateDialogOpen(open); if (!open) { resetMateriState(); setEditAssignmentData({ title: "", description: "", deadline: "", mediaTypeId: "", artworkSize: "", classIds: [], status: "" }); setSelectedMediaType(""); } }}>
                   <DialogTrigger asChild>
                     <Button variant="gradient" className="gap-2">
                       <Plus className="w-4 h-4" />
                       Buat Tugas
                     </Button>
                   </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="font-display">Buat Tugas Baru</DialogTitle>
                 <DialogDescription>
@@ -1169,24 +1393,25 @@ const Assignments = () => {
               <form onSubmit={handleCreateAssignment} className="space-y-4">
                 <div className="space-y-2">
                   <Label>Judul Tugas</Label>
-                  <Input 
-                    placeholder="Masukkan judul tugas" 
-                    className="rounded-xl" 
+                  <Input
+                    placeholder="Masukkan judul tugas"
+                    className="rounded-xl"
                     value={editAssignmentData.title}
                     onChange={(e) => setEditAssignmentData({ ...editAssignmentData, title: e.target.value })}
-                    required 
+                    required
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>Deskripsi</Label>
-                  <Textarea 
-                    placeholder="Deskripsi tugas..." 
-                    className="rounded-xl min-h-24" 
+                  <Textarea
+                    placeholder="Deskripsi tugas..."
+                    className="rounded-xl min-h-24"
                     value={editAssignmentData.description}
                     onChange={(e) => setEditAssignmentData({ ...editAssignmentData, description: e.target.value })}
-                    required 
+                    required
                   />
                 </div>
+                {renderMateriField()}
                 <div className="space-y-2">
                   <Label>Tipe Media</Label>
                   <div className="flex gap-2">
@@ -1302,12 +1527,12 @@ const Assignments = () => {
                   </Select>
                 </div>
                 <div className="flex gap-3">
-                  <Button type="button" variant="outline" className="flex-1" onClick={() => setIsCreateDialogOpen(false)} disabled={submitting}>
+                  <Button type="button" variant="outline" className="flex-1" onClick={() => { setIsCreateDialogOpen(false); resetMateriState(); setEditAssignmentData({ title: "", description: "", deadline: "", mediaTypeId: "", artworkSize: "", classIds: [], status: "" }); setSelectedMediaType(""); }} disabled={submitting}>
                     Batal
                   </Button>
-                  <Button type="submit" variant="gradient" className="flex-1" disabled={!selectedMediaType || editAssignmentData.classIds.length === 0 || submitting}>
-                    {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                    Buat Tugas
+                  <Button type="submit" variant="gradient" className="flex-1" disabled={!selectedMediaType || editAssignmentData.classIds.length === 0 || submitting || materiUploading}>
+                    {(submitting || materiUploading) ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                    {materiUploading ? "Mengupload Materi..." : "Buat Tugas"}
                   </Button>
                 </div>
               </form>
@@ -1400,13 +1625,13 @@ const Assignments = () => {
                 </div>
 
                 {/* Info */}
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-4">
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <h3 className="font-display font-bold text-lg group-hover:text-primary transition-colors">
                         {assignment.title}
                       </h3>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2 break-words">
                         {assignment.description}
                       </p>
                     </div>
@@ -1454,6 +1679,7 @@ const Assignments = () => {
                         Kelas: {assignment.classes.map((c) => c.class?.name || "").filter(Boolean).join(", ")}
                       </div>
                     )}
+                    {assignment.materiUrl && renderMateriBadge(assignment)}
                   </div>
 
                   {/* Status Badge for Students - Removed redundant text */}
@@ -1576,73 +1802,86 @@ const Assignments = () => {
                     </>
                   ) : (
                     <>
-                      {/* Student: Not submitted yet */}
-                      {isStudentAssignmentView(assignment) && assignment.status === "not_submitted" && (
-                        <Button 
-                          variant="gradient" 
-                          size="sm"
-                          onClick={() => {
-                            setSelectedStudentAssignment(assignment);
-                            setSubmissionFormData({ title: "", description: "", image: null });
-                            setIsSubmitDialogOpen(true);
-                          }}
-                        >
-                          <Upload className="w-4 h-4 mr-1" />
-                          Kumpulkan
-                        </Button>
-                      )}
-                      {/* Student: Needs revision */}
-                      {isStudentAssignmentView(assignment) && assignment.status === "revision" && (
-                        <Button 
-                          variant="accent" 
-                          size="sm"
-                          onClick={() => {
-                            setSelectedStudentAssignment(assignment);
-                            setSubmissionFormData({ title: "", description: "", image: null });
-                            setSubmissionImagePreview(null);
-                            if (fileInputRef.current) fileInputRef.current.value = '';
-                            setIsSubmitDialogOpen(true);
-                          }}
-                        >
-                          <RotateCcw className="w-4 h-4 mr-1" />
-                          Upload Revisi
-                        </Button>
-                      )}
-                      {/* Student: Graded - view feedback */}
-                      {isStudentAssignmentView(assignment) && assignment.status === "graded" && (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            setSelectedStudentAssignment(assignment);
-                            setIsFeedbackDialogOpen(true);
-                          }}
-                        >
-                          <MessageSquare className="w-4 h-4 mr-1" />
-                          Lihat Feedback
-                        </Button>
-                      )}
-                      {/* Student: Pending review */}
-                      {isStudentAssignmentView(assignment) && assignment.status === "pending" && (
+                      {isStudentAssignmentView(assignment) && (
                         <>
-                          <Button 
-                            variant="outline" 
+                          {/* Detail button - always visible for students */}
+                          <Button
+                            variant="outline"
                             size="sm"
                             className="flex-1"
-                            onClick={() => handleEditSubmission(assignment)}
+                            onClick={() => {
+                              setSelectedStudentAssignment(assignment);
+                              setIsStudentDetailDialogOpen(true);
+                            }}
                           >
-                            <Edit className="w-4 h-4 mr-1" />
-                            Edit Karya
+                            <Eye className="w-4 h-4 mr-1" />
+                            Lihat Detail
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className="flex-1 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => handleCancelSubmission(assignment)}
-                          >
-                            <XCircle className="w-4 h-4 mr-1" />
-                            Batalkan
-                          </Button>
+
+                          {/* Student: Not submitted yet */}
+                          {assignment.status === "not_submitted" && (
+                            <Button
+                              variant="gradient"
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => {
+                                setSelectedStudentAssignment(assignment);
+                                setSubmissionFormData({ title: "", description: "", image: null });
+                                setIsSubmitDialogOpen(true);
+                              }}
+                            >
+                              <Upload className="w-4 h-4 mr-1" />
+                              Kumpulkan
+                            </Button>
+                          )}
+
+                          {/* Student: Needs revision */}
+                          {assignment.status === "revision" && (
+                            <Button
+                              variant="accent"
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => {
+                                setSelectedStudentAssignment(assignment);
+                                setSubmissionFormData({ title: "", description: "", image: null });
+                                setSubmissionImagePreview(null);
+                                if (fileInputRef.current) fileInputRef.current.value = '';
+                                setIsSubmitDialogOpen(true);
+                              }}
+                            >
+                              <RotateCcw className="w-4 h-4 mr-1" />
+                              Revisi
+                            </Button>
+                          )}
+
+                          {/* Student: Graded */}
+                          {assignment.status === "graded" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => {
+                                setSelectedStudentAssignment(assignment);
+                                setIsFeedbackDialogOpen(true);
+                              }}
+                            >
+                              <MessageSquare className="w-4 h-4 mr-1" />
+                              Feedback
+                            </Button>
+                          )}
+
+                          {/* Student: Pending review */}
+                          {assignment.status === "pending" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => handleCancelSubmission(assignment)}
+                            >
+                              <XCircle className="w-4 h-4 mr-1" />
+                              Batalkan
+                            </Button>
+                          )}
                         </>
                       )}
                     </>
@@ -1657,36 +1896,67 @@ const Assignments = () => {
 
       {/* Detail Dialog for Teachers */}
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-display">{selectedAssignment?.title}</DialogTitle>
-            <DialogDescription>
-              {selectedAssignment?.description}
-            </DialogDescription>
+            <DialogTitle className="font-display text-xl">{selectedAssignment?.title}</DialogTitle>
           </DialogHeader>
           {selectedAssignment && (() => {
             const assignmentWithSubmissions = getAssignmentWithSubmissions(selectedAssignment);
             return (
-              <div className="space-y-4">
-                {/* Assignment Info */}
-                <div className="grid grid-cols-4 gap-3">
+              <div className="space-y-5">
+                {/* Description */}
+                <div className="p-4 bg-muted/40 rounded-xl">
+                  <p className="text-xs font-semibold text-muted-foreground mb-1.5">Deskripsi Tugas</p>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{selectedAssignment.description}</p>
+                </div>
+
+                {/* Materi Section */}
+                {selectedAssignment.materiUrl && (
+                  <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl">
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">Materi Pembelajaran</p>
+                    <a
+                      href={selectedAssignment.materiUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 bg-background rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-all group"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        {selectedAssignment.materiType === "FILE" ? (
+                          <FileText className="w-4 h-4 text-primary" />
+                        ) : (
+                          <Link className="w-4 h-4 text-primary" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium group-hover:text-primary transition-colors">
+                          {selectedAssignment.materiType === "FILE" ? "Download Materi" : "Buka Link Materi"}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">{selectedAssignment.materiUrl}</p>
+                      </div>
+                      <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                    </a>
+                  </div>
+                )}
+
+                {/* Assignment Stats Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="p-3 bg-muted/50 rounded-xl">
                     <p className="text-xs text-muted-foreground">Deadline</p>
-                    <p className="font-semibold text-sm">
+                    <p className="font-semibold text-sm mt-0.5">
                       {new Date(selectedAssignment.deadline).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
                     </p>
                   </div>
                   <div className="p-3 bg-muted/50 rounded-xl">
                     <p className="text-xs text-muted-foreground">Pengumpulan</p>
-                    <p className="font-semibold text-sm">{assignmentWithSubmissions.submissions || 0}/{assignmentWithSubmissions.total || 0}</p>
+                    <p className="font-semibold text-sm mt-0.5">{assignmentWithSubmissions.submissions || 0}/{assignmentWithSubmissions.total || 0}</p>
                   </div>
                   <div className="p-3 bg-secondary/10 rounded-xl">
                     <p className="text-xs text-muted-foreground">Menunggu Review</p>
-                    <p className="font-semibold text-sm text-secondary">{assignmentWithSubmissions.pendingCount || 0}</p>
+                    <p className="font-semibold text-sm text-secondary mt-0.5">{assignmentWithSubmissions.pendingCount || 0}</p>
                   </div>
                   <div className="p-3 bg-accent/10 rounded-xl">
                     <p className="text-xs text-muted-foreground">Perlu Revisi</p>
-                    <p className="font-semibold text-sm text-accent">{assignmentWithSubmissions.revisionCount || 0}</p>
+                    <p className="font-semibold text-sm text-accent mt-0.5">{assignmentWithSubmissions.revisionCount || 0}</p>
                   </div>
                 </div>
 
@@ -1694,40 +1964,223 @@ const Assignments = () => {
                 <div>
                   <h4 className="font-display font-bold mb-3">Daftar Pengumpulan</h4>
                   {assignmentWithSubmissions.studentSubmissions && assignmentWithSubmissions.studentSubmissions.length > 0 ? (
-                    <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                    <div className="space-y-3 max-h-[360px] overflow-y-auto pr-2">
                       {assignmentWithSubmissions.studentSubmissions.map((submission) => (
-                        <div key={submission.id} className="flex items-center gap-4 p-3 bg-muted/30 rounded-xl">
-                          <Avatar className="w-10 h-10">
+                        <div key={submission.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl">
+                          <Avatar className="w-10 h-10 flex-shrink-0">
                             <AvatarImage src={submission.student?.avatar || undefined} />
                             <AvatarFallback>{(submission.student?.name || "S").charAt(0)}</AvatarFallback>
                           </Avatar>
-                          <div className="flex-1">
-                            <p className="font-semibold text-sm">{submission.student?.name || "Siswa"}</p>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm truncate">{submission.student?.name || "Siswa"}</p>
                             <p className="text-xs text-muted-foreground">
-                              {submission.student?.className || ""} • Dikumpulkan {submission.submittedAt ? new Date(submission.submittedAt).toLocaleDateString("id-ID") : ""}
+                              {submission.student?.className || ""} • {submission.submittedAt ? new Date(submission.submittedAt).toLocaleDateString("id-ID") : "Belum dikumpulkan"}
                               {submission.revisionCount > 0 && ` • Revisi ke-${submission.revisionCount}`}
                             </p>
                           </div>
-                          {getSubmissionStatusBadge(submission.status, submission.grade, submission.revisionCount)}
-                          {submission.status === "PENDING" && (
-                            <Button 
-                              variant="teal" 
-                              size="sm"
-                              onClick={() => openReviewDialog(submission)}
-                            >
-                              <Eye className="w-4 h-4 mr-1" />
-                              Review
-                            </Button>
-                          )}
-                          {submission.status === "REVISION" && (
-                            <span className="text-xs text-accent">Menunggu revisi siswa</span>
-                          )}
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {getSubmissionStatusBadge(submission.status, submission.grade, submission.revisionCount)}
+                            {submission.status === "PENDING" && (
+                              <Button
+                                variant="teal"
+                                size="sm"
+                                onClick={() => openReviewDialog(submission)}
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                Review
+                              </Button>
+                            )}
+                            {submission.status === "REVISION" && (
+                              <span className="text-xs text-accent whitespace-nowrap">Menunggu revisi</span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <p className="text-muted-foreground text-sm text-center py-8">Belum ada siswa yang mengumpulkan</p>
                   )}
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Detail Dialog for Students */}
+      <Dialog open={isStudentDetailDialogOpen} onOpenChange={setIsStudentDetailDialogOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl leading-snug">
+              {selectedStudentAssignment?.title}
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedStudentAssignment && (() => {
+            const submission = getStudentSubmission(selectedStudentAssignment.id);
+            return (
+              <div className="space-y-4">
+                {/* Status + Grade */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {getStatusBadge(selectedStudentAssignment.status, selectedStudentAssignment.grade ?? undefined)}
+                  {selectedStudentAssignment.status === "graded" && selectedStudentAssignment.grade !== null && (
+                    <span className="text-2xl font-display font-bold text-green ml-auto">{selectedStudentAssignment.grade}<span className="text-sm font-normal text-muted-foreground">/100</span></span>
+                  )}
+                </div>
+
+                {/* Revision note */}
+                {selectedStudentAssignment.status === "revision" && selectedStudentAssignment.revisionNote && (
+                  <div className="p-3 bg-accent/10 border border-accent/20 rounded-xl">
+                    <p className="text-xs font-semibold text-accent mb-1">Catatan Revisi dari Guru:</p>
+                    <p className="text-sm leading-relaxed">{selectedStudentAssignment.revisionNote}</p>
+                  </div>
+                )}
+
+                {/* Feedback */}
+                {selectedStudentAssignment.status === "graded" && selectedStudentAssignment.feedback && (
+                  <div className="p-3 bg-muted/50 rounded-xl">
+                    <p className="text-xs font-semibold text-muted-foreground mb-1">Feedback Guru:</p>
+                    <p className="text-sm leading-relaxed">{selectedStudentAssignment.feedback}</p>
+                  </div>
+                )}
+
+                {/* Description */}
+                <div className="p-4 bg-muted/40 rounded-xl">
+                  <p className="text-xs font-semibold text-muted-foreground mb-1.5">Deskripsi Tugas</p>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{selectedStudentAssignment.description}</p>
+                </div>
+
+                {/* Materi */}
+                {selectedStudentAssignment.materiUrl && (
+                  <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl">
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">Materi Pembelajaran</p>
+                    <a
+                      href={selectedStudentAssignment.materiUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-2.5 bg-background rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-all group"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        {selectedStudentAssignment.materiType === "FILE" ? (
+                          <FileText className="w-4 h-4 text-primary" />
+                        ) : (
+                          <Link className="w-4 h-4 text-primary" />
+                        )}
+                      </div>
+                      <span className="text-sm font-medium group-hover:text-primary transition-colors flex-1">
+                        {selectedStudentAssignment.materiType === "FILE" ? "Download Materi" : "Buka Link Materi"}
+                      </span>
+                      <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                    </a>
+                  </div>
+                )}
+
+                {/* Info chips */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-muted/50 rounded-xl">
+                    <p className="text-xs text-muted-foreground">Deadline</p>
+                    <p className="font-semibold text-sm mt-0.5">
+                      {new Date(selectedStudentAssignment.deadline).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
+                    </p>
+                  </div>
+                  {selectedStudentAssignment.mediaType && (
+                    <div className="p-3 bg-muted/50 rounded-xl">
+                      <p className="text-xs text-muted-foreground">Tipe Karya</p>
+                      <p className="font-semibold text-sm mt-0.5">
+                        {typeof selectedStudentAssignment.mediaType === 'string' ? selectedStudentAssignment.mediaType : selectedStudentAssignment.mediaType.name}
+                      </p>
+                    </div>
+                  )}
+                  {selectedStudentAssignment.createdBy && (
+                    <div className="p-3 bg-muted/50 rounded-xl">
+                      <p className="text-xs text-muted-foreground">Guru</p>
+                      <p className="font-semibold text-sm mt-0.5">{selectedStudentAssignment.createdBy.name}</p>
+                    </div>
+                  )}
+                  {selectedStudentAssignment.classes && selectedStudentAssignment.classes.length > 0 && (
+                    <div className="p-3 bg-muted/50 rounded-xl">
+                      <p className="text-xs text-muted-foreground">Kelas</p>
+                      <p className="font-semibold text-sm mt-0.5">
+                        {selectedStudentAssignment.classes.map((c) => c.class?.name || "").filter(Boolean).join(", ")}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex flex-col gap-2 pt-1">
+                  {selectedStudentAssignment.status === "not_submitted" && (
+                    <Button
+                      variant="gradient"
+                      className="w-full"
+                      onClick={() => {
+                        setIsStudentDetailDialogOpen(false);
+                        setSubmissionFormData({ title: "", description: "", image: null });
+                        setIsSubmitDialogOpen(true);
+                      }}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Kumpulkan Tugas
+                    </Button>
+                  )}
+                  {selectedStudentAssignment.status === "revision" && (
+                    <Button
+                      variant="accent"
+                      className="w-full"
+                      onClick={() => {
+                        setIsStudentDetailDialogOpen(false);
+                        setSubmissionFormData({ title: "", description: "", image: null });
+                        setSubmissionImagePreview(null);
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                        setIsSubmitDialogOpen(true);
+                      }}
+                    >
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Upload Revisi
+                    </Button>
+                  )}
+                  {selectedStudentAssignment.status === "graded" && (
+                    <Button
+                      variant="gradient"
+                      className="w-full"
+                      onClick={() => {
+                        setIsStudentDetailDialogOpen(false);
+                        setIsFeedbackDialogOpen(true);
+                      }}
+                    >
+                      <Star className="w-4 h-4 mr-2" />
+                      Lihat Feedback & Sertifikat
+                    </Button>
+                  )}
+                  {selectedStudentAssignment.status === "pending" && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setIsStudentDetailDialogOpen(false);
+                          handleEditSubmission(selectedStudentAssignment);
+                        }}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Karya
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="flex-1 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          setIsStudentDetailDialogOpen(false);
+                          handleCancelSubmission(selectedStudentAssignment);
+                        }}
+                      >
+                        <XCircle className="w-4 h-4 mr-2" />
+                        Batalkan
+                      </Button>
+                    </div>
+                  )}
+                  <Button variant="outline" className="w-full" onClick={() => setIsStudentDetailDialogOpen(false)}>
+                    Tutup
+                  </Button>
                 </div>
               </div>
             );
@@ -2006,6 +2459,29 @@ const Assignments = () => {
             </DialogDescription>
           </DialogHeader>
           
+          {/* Show materi if available */}
+          {selectedStudentAssignment?.materiUrl && (
+            <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl">
+              <p className="text-xs font-semibold text-muted-foreground mb-2">Materi Pembelajaran</p>
+              <a
+                href={selectedStudentAssignment.materiUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 p-2 bg-background rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-all group"
+              >
+                {selectedStudentAssignment.materiType === "FILE" ? (
+                  <FileText className="w-4 h-4 text-primary flex-shrink-0" />
+                ) : (
+                  <Link className="w-4 h-4 text-primary flex-shrink-0" />
+                )}
+                <span className="text-sm font-medium text-primary group-hover:underline flex-1 truncate">
+                  {selectedStudentAssignment.materiType === "FILE" ? "Download Materi" : "Buka Link Materi"}
+                </span>
+                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+              </a>
+            </div>
+          )}
+
           {/* Show revision note if any */}
           {selectedStudentAssignment?.status === "revision" && selectedStudentAssignment?.revisionNote && (
             <div className="p-3 bg-accent/10 border border-accent/20 rounded-xl">
@@ -2440,8 +2916,8 @@ const Assignments = () => {
       </Dialog>
 
       {/* Edit Assignment Dialog (Teacher) */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => { if (!open) { setIsEditDialogOpen(false); resetMateriState(); } else { setIsEditDialogOpen(true); } }}>
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display">Edit Tugas</DialogTitle>
             <DialogDescription>
@@ -2451,24 +2927,25 @@ const Assignments = () => {
           <form onSubmit={handleSaveEditAssignment} className="space-y-4">
             <div className="space-y-2">
               <Label>Judul Tugas</Label>
-              <Input 
-                placeholder="Masukkan judul tugas" 
-                className="rounded-xl" 
+              <Input
+                placeholder="Masukkan judul tugas"
+                className="rounded-xl"
                 value={editAssignmentData.title}
                 onChange={(e) => setEditAssignmentData({ ...editAssignmentData, title: e.target.value })}
-                required 
+                required
               />
             </div>
             <div className="space-y-2">
               <Label>Deskripsi</Label>
-              <Textarea 
-                placeholder="Deskripsi tugas..." 
-                className="rounded-xl min-h-24" 
+              <Textarea
+                placeholder="Deskripsi tugas..."
+                className="rounded-xl min-h-24"
                 value={editAssignmentData.description}
                 onChange={(e) => setEditAssignmentData({ ...editAssignmentData, description: e.target.value })}
-                required 
+                required
               />
             </div>
+            {renderMateriField()}
             <div className="space-y-2">
               <Label>Tipe Media</Label>
               <div className="flex gap-2">
@@ -2544,11 +3021,12 @@ const Assignments = () => {
               </Select>
             </div>
             <div className="flex gap-3">
-              <Button type="button" variant="outline" className="flex-1" onClick={() => setIsEditDialogOpen(false)}>
+              <Button type="button" variant="outline" className="flex-1" onClick={() => { setIsEditDialogOpen(false); resetMateriState(); }} disabled={submitting || materiUploading}>
                 Batal
               </Button>
-              <Button type="submit" variant="gradient" className="flex-1" disabled={!selectedMediaType}>
-                Simpan Perubahan
+              <Button type="submit" variant="gradient" className="flex-1" disabled={!selectedMediaType || submitting || materiUploading}>
+                {(submitting || materiUploading) ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                {materiUploading ? "Mengupload Materi..." : "Simpan Perubahan"}
               </Button>
             </div>
           </form>

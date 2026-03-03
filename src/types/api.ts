@@ -49,6 +49,8 @@ export interface Assignment {
     description: string;
     mediaTypeId: string;
     artworkSize?: string;
+    materiUrl?: string | null;
+    materiType?: "FILE" | "LINK" | null;
     deadline: string;
     status: "DRAFT" | "ACTIVE" | "COMPLETED";
     createdById: string;
@@ -194,6 +196,8 @@ export interface CreateAssignmentRequest {
     description: string;
     mediaTypeId: string;
     artworkSize?: string;
+    materiUrl?: string;
+    materiType?: "FILE" | "LINK";
     deadline: string;
     classIds: string[];
     status?: "DRAFT" | "ACTIVE" | "COMPLETED";
@@ -204,6 +208,8 @@ export interface UpdateAssignmentRequest {
     description?: string;
     mediaTypeId?: string;
     artworkSize?: string;
+    materiUrl?: string | null;
+    materiType?: "FILE" | "LINK" | null;
     deadline?: string;
     status?: "DRAFT" | "ACTIVE" | "COMPLETED";
     classIds?: string[];

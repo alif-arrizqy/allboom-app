@@ -86,5 +86,20 @@ export const assignmentService = {
     });
     return response.data;
   },
+
+  /**
+   * Upload materi file (PDF, DOC, DOCX, PPT, PPTX)
+   * Returns the uploaded file URL
+   */
+  async uploadMateriFile(file: File): Promise<ApiResponse<{ materiUrl: string; fileName: string }>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post<ApiResponse<{ materiUrl: string; fileName: string }>>(
+      '/assignments/upload-materi',
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+    return response.data;
+  },
 };
 
