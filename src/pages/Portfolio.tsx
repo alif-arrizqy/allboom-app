@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Search, Image, Grid, List, Award, Calendar, Star, User as UserIcon, GraduationCap, Palette } from "lucide-react";
+import { Search, Image, Grid, List, Award, Calendar, Tag, User as UserIcon, Palette } from "lucide-react";
 import { portfolioService } from "@/services/portfolio.service";
 import { useToast } from "@/hooks/use-toast";
 import type { Portfolio } from "@/types/api";
@@ -217,22 +217,10 @@ const Portfolio = () => {
                     </div>
                   </div>
               </div>
-              <CardContent className="p-4 space-y-3">
-                {/* Assignment Info */}
+              <CardContent className="p-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Palette className="w-4 h-4 text-primary" />
                   <span className="line-clamp-1">{portfolio.assignment?.title || "-"}</span>
-                </div>
-                
-                {/* Date and Media Type */}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-lg">
-                    {portfolio.mediaType?.name || "-"}
-                  </span>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Calendar className="w-3 h-3" />
-                    {portfolio.submittedAt ? new Date(portfolio.submittedAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "-"}
-                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -278,13 +266,6 @@ const Portfolio = () => {
                       <span>{portfolio.assignment?.title || "-"}</span>
                     </div>
                     
-                    <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
-                      <span className="bg-muted px-2 py-1 rounded-lg text-xs">{portfolio.mediaType?.name || "-"}</span>
-                      <div className="flex items-center gap-1 text-xs">
-                        <Calendar className="w-3 h-3" />
-                        {portfolio.submittedAt ? new Date(portfolio.submittedAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "-"}
-                      </div>
-                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -339,13 +320,20 @@ const Portfolio = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-xl">
-                  <Star className="w-5 h-5 text-accent" />
+                  <Tag className="w-5 h-5 text-accent" />
                   <div>
-                    <p className="text-xs text-muted-foreground">Kategori</p>
+                    <p className="text-xs text-muted-foreground">Tipe Media</p>
                     <p className="font-semibold text-sm">{selectedWork.mediaType?.name || "-"}</p>
                   </div>
                 </div>
               </div>
+
+              {selectedWork.description && (
+                <div className="p-4 bg-muted/50 rounded-xl">
+                  <p className="text-sm font-semibold mb-2">Deskripsi Karya:</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{selectedWork.description}</p>
+                </div>
+              )}
 
               {selectedWork.feedback && (
                 <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
