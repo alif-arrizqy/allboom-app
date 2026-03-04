@@ -43,7 +43,8 @@ import {
   Loader2,
   FileText,
   Link,
-  ExternalLink
+  ExternalLink,
+  GraduationCap
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { assignmentService } from "@/services/assignment.service";
@@ -1668,6 +1669,16 @@ const Assignments = () => {
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Tag className="w-4 h-4" />
                         {typeof assignment.mediaType === 'string' ? assignment.mediaType : assignment.mediaType.name}
+                      </div>
+                    )}
+                    {isTeacher && assignment.classes && assignment.classes.length > 0 && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <GraduationCap className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        {assignment.classes.map((c) => c.class?.name).filter(Boolean).map((name) => (
+                          <span key={name} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-lg font-medium">
+                            {name}
+                          </span>
+                        ))}
                       </div>
                     )}
                     {/* Teacher and Class Info for Students */}
