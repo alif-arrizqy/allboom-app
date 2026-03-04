@@ -70,6 +70,7 @@ type AssignmentWithSubmissions = Assignment & {
 
 type StudentAssignmentView = Omit<Assignment, 'status'> & {
   status: "pending" | "revision" | "graded" | "not_submitted";
+  assignmentStatus: "DRAFT" | "ACTIVE" | "COMPLETED";
   grade: number | null;
   feedback: string | null;
   revisionNote: string | null;
@@ -136,6 +137,7 @@ const Assignments = () => {
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [selectedStudentAssignment, setSelectedStudentAssignment] = useState<StudentAssignmentView | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [detailClassFilter, setDetailClassFilter] = useState("Semua");
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [gradeValue, setGradeValue] = useState<string>("");
@@ -371,6 +373,7 @@ const Assignments = () => {
       return {
         ...assignment,
         status: "not_submitted" as const,
+        assignmentStatus: assignment.status,
         grade: null,
         feedback: null,
         revisionNote: null,
@@ -379,10 +382,11 @@ const Assignments = () => {
         imageHistory: [],
       };
     }
-    
+
     return {
       ...assignment,
       status: submission.status.toLowerCase() as "pending" | "revision" | "graded" | "not_submitted",
+      assignmentStatus: assignment.status,
       grade: submission.grade,
       feedback: submission.feedback,
       revisionNote: submission.revisions?.[submission.revisions.length - 1]?.revisionNote || null,
@@ -1721,6 +1725,7 @@ const Assignments = () => {
                             classes: assignment.classes,
                           };
                           setSelectedAssignment(baseAssignment);
+                          setDetailClassFilter("Semua");
                           setIsDetailDialogOpen(true);
                         }}
                       >
@@ -1819,7 +1824,7 @@ const Assignments = () => {
                           </Button>
 
                           {/* Student: Not submitted yet */}
-                          {assignment.status === "not_submitted" && (
+                          {assignment.status === "not_submitted" && assignment.assignmentStatus === "ACTIVE" && (
                             <Button
                               variant="gradient"
                               size="sm"
@@ -1836,7 +1841,7 @@ const Assignments = () => {
                           )}
 
                           {/* Student: Needs revision */}
-                          {assignment.status === "revision" && (
+                          {assignment.status === "revision" && assignment.assignmentStatus === "ACTIVE" && (
                             <Button
                               variant="accent"
                               size="sm"
@@ -1852,6 +1857,13 @@ const Assignments = () => {
                               <RotateCcw className="w-4 h-4 mr-1" />
                               Revisi
                             </Button>
+                          )}
+
+                          {/* Student: Assignment closed - cannot submit */}
+                          {(assignment.status === "not_submitted" || assignment.status === "revision") && assignment.assignmentStatus !== "ACTIVE" && (
+                            <span className="flex-1 text-center text-xs text-muted-foreground bg-muted/60 rounded-lg px-2 py-1.5 border border-border">
+                              Tugas Ditutup
+                            </span>
                           )}
 
                           {/* Student: Graded */}
@@ -1963,43 +1975,65 @@ const Assignments = () => {
                 {/* Submissions List */}
                 <div>
                   <h4 className="font-display font-bold mb-3">Daftar Pengumpulan</h4>
-                  {assignmentWithSubmissions.studentSubmissions && assignmentWithSubmissions.studentSubmissions.length > 0 ? (
-                    <div className="space-y-3 max-h-[360px] overflow-y-auto pr-2">
-                      {assignmentWithSubmissions.studentSubmissions.map((submission) => (
-                        <div key={submission.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl">
-                          <Avatar className="w-10 h-10 flex-shrink-0">
-                            <AvatarImage src={submission.student?.avatar || undefined} />
-                            <AvatarFallback>{(submission.student?.name || "S").charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm truncate">{submission.student?.name || "Siswa"}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {submission.student?.className || ""} • {submission.submittedAt ? new Date(submission.submittedAt).toLocaleDateString("id-ID") : "Belum dikumpulkan"}
-                              {submission.revisionCount > 0 && ` • Revisi ke-${submission.revisionCount}`}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            {getSubmissionStatusBadge(submission.status, submission.grade, submission.revisionCount)}
-                            {submission.status === "PENDING" && (
-                              <Button
-                                variant="teal"
-                                size="sm"
-                                onClick={() => openReviewDialog(submission)}
-                              >
-                                <Eye className="w-4 h-4 mr-1" />
-                                Review
-                              </Button>
-                            )}
-                            {submission.status === "REVISION" && (
-                              <span className="text-xs text-accent whitespace-nowrap">Menunggu revisi</span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground text-sm text-center py-8">Belum ada siswa yang mengumpulkan</p>
+
+                  {/* Class filter tabs */}
+                  {selectedAssignment.classes && selectedAssignment.classes.length > 1 && (
+                    <Tabs value={detailClassFilter} onValueChange={setDetailClassFilter} className="mb-3">
+                      <TabsList className="h-9 rounded-xl bg-muted/50 flex-wrap">
+                        <TabsTrigger value="Semua" className="rounded-lg text-xs">
+                          Semua
+                        </TabsTrigger>
+                        {selectedAssignment.classes.map((c) => (
+                          <TabsTrigger key={c.class.id} value={c.class.name} className="rounded-lg text-xs">
+                            {c.class.name}
+                          </TabsTrigger>
+                        ))}
+                      </TabsList>
+                    </Tabs>
                   )}
+
+                  {(() => {
+                    const filtered = detailClassFilter === "Semua"
+                      ? assignmentWithSubmissions.studentSubmissions
+                      : assignmentWithSubmissions.studentSubmissions?.filter(
+                          (s) => s.student?.className === detailClassFilter
+                        );
+                    return filtered && filtered.length > 0 ? (
+                      <div className="space-y-3 max-h-[360px] overflow-y-auto pr-2">
+                        {filtered.map((sub) => (
+                          <div key={sub.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl">
+                            <Avatar className="w-10 h-10 flex-shrink-0">
+                              <AvatarImage src={sub.student?.avatar || undefined} />
+                              <AvatarFallback>{(sub.student?.name || "S").charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm truncate">{sub.student?.name || "Siswa"}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {sub.student?.className || ""} • {sub.submittedAt ? new Date(sub.submittedAt).toLocaleDateString("id-ID") : "Belum dikumpulkan"}
+                                {sub.revisionCount > 0 && ` • Revisi ke-${sub.revisionCount}`}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {getSubmissionStatusBadge(sub.status, sub.grade, sub.revisionCount)}
+                              {sub.status === "PENDING" && (
+                                <Button variant="teal" size="sm" onClick={() => openReviewDialog(sub)}>
+                                  <Eye className="w-4 h-4 mr-1" />
+                                  Review
+                                </Button>
+                              )}
+                              {sub.status === "REVISION" && (
+                                <span className="text-xs text-accent whitespace-nowrap">Menunggu revisi</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-sm text-center py-8">
+                        {detailClassFilter === "Semua" ? "Belum ada siswa yang mengumpulkan" : `Belum ada pengumpulan dari kelas ${detailClassFilter}`}
+                      </p>
+                    );
+                  })()}
                 </div>
               </div>
             );
