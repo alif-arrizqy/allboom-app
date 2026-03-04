@@ -28,6 +28,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { userService } from "@/services/user.service";
 import { classService } from "@/services/class.service";
+import { submissionService } from "@/services/submission.service";
 import { FrontendUser } from "@/layouts/DashboardLayout";
 import type { User } from "@/types/api";
 import type { Class } from "@/types/api";
@@ -40,6 +41,9 @@ const Students = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClass, setSelectedClass] = useState("Semua");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
+  const [studentStats, setStudentStats] = useState<Record<string, { count: number; avgGrade: number | null }>>({});
   const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importPreview, setImportPreview] = useState<Array<{ name: string; email: string; phone: string; class: string; valid: boolean; error?: string }>>([]);
@@ -136,10 +140,39 @@ const Students = () => {
     }
   }, [isTeacher, user.classes]);
 
+  const fetchStudentStats = useCallback(async () => {
+    try {
+      const response = await submissionService.getSubmissions({ limit: 100 });
+      if (response.success && response.data) {
+        const allSubs = Array.isArray(response.data) ? response.data : response.data.data || [];
+        const map: Record<string, { count: number; gradeSum: number; gradeCount: number }> = {};
+
+        allSubs.forEach((sub) => {
+          if (!sub.studentId || sub.status === "NOT_SUBMITTED") return;
+          if (!map[sub.studentId]) map[sub.studentId] = { count: 0, gradeSum: 0, gradeCount: 0 };
+          map[sub.studentId].count++;
+          if (sub.grade !== null && sub.grade !== undefined) {
+            map[sub.studentId].gradeSum += sub.grade;
+            map[sub.studentId].gradeCount++;
+          }
+        });
+
+        const stats: Record<string, { count: number; avgGrade: number | null }> = {};
+        Object.entries(map).forEach(([id, { count, gradeSum, gradeCount }]) => {
+          stats[id] = { count, avgGrade: gradeCount > 0 ? Math.round(gradeSum / gradeCount) : null };
+        });
+        setStudentStats(stats);
+      }
+    } catch {
+      console.error("Error fetching student stats");
+    }
+  }, []);
+
   useEffect(() => {
     fetchStudents();
     fetchClasses();
-  }, [fetchStudents, fetchClasses]);
+    fetchStudentStats();
+  }, [fetchStudents, fetchClasses, fetchStudentStats]);
 
   const filteredStudents = students.filter((student) => {
     const matchesSearch = student.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -149,7 +182,18 @@ const Students = () => {
     return matchesSearch && matchesClass;
   });
 
+  const totalPages = Math.ceil(filteredStudents.length / ITEMS_PER_PAGE);
+  const paginatedStudents = filteredStudents.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   const availableClasses = ["Semua", ...classes.map(c => c.name)];
+
+  // Reset to page 1 when search or class filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedClass]);
 
   const getScoreColor = (score: number) => {
     if (score >= 90) return "text-green bg-green/10";
@@ -630,7 +674,7 @@ const Students = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredStudents.map((student) => (
+          {paginatedStudents.map((student) => (
           <Card key={student.id} className="card-playful group">
             <CardContent className="p-5">
               <div className="flex items-start justify-between mb-4">
@@ -651,11 +695,19 @@ const Students = () => {
 
               <div className="flex items-center gap-4 mt-4 pt-4 border-t border-border text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  <Image className="w-4 h-4" /> -
+                  <Image className="w-4 h-4" />
+                  {studentStats[student.id]?.count ?? 0} karya
                 </span>
-                <span className="flex items-center gap-1">
-                  <Star className="w-4 h-4" /> -
-                </span>
+                {studentStats[student.id]?.avgGrade !== null && studentStats[student.id]?.avgGrade !== undefined ? (
+                  <span className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold ${getScoreColor(studentStats[student.id].avgGrade!)}`}>
+                    <Star className="w-3.5 h-3.5" />
+                    {studentStats[student.id].avgGrade}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1">
+                    <Star className="w-4 h-4" /> -
+                  </span>
+                )}
               </div>
 
               {/* Action Buttons */}
@@ -681,6 +733,46 @@ const Students = () => {
             </CardContent>
           </Card>
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {!loading && totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <p className="text-sm text-muted-foreground">
+            Menampilkan {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredStudents.length)} dari {filteredStudents.length} siswa
+          </p>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              ← Sebelumnya
+            </Button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                variant={page === currentPage ? "gradient" : "outline"}
+                size="sm"
+                className="rounded-xl w-9"
+                onClick={() => setCurrentPage(page)}
+              >
+                {page}
+              </Button>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Berikutnya →
+            </Button>
+          </div>
         </div>
       )}
 
