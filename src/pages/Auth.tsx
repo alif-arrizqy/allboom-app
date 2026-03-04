@@ -480,12 +480,12 @@ const Auth = () => {
                       <Input
                         id="signup-password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="Minimal 3 karakter"
+                        placeholder="Minimal 6 karakter"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className="h-12 rounded-xl pr-10"
                         required
-                        minLength={3}
+                        minLength={6}
                       />
                       <button
                         type="button"
