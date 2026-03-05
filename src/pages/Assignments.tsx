@@ -534,11 +534,11 @@ const Assignments = () => {
         if (selectedTab === "all") return matchesSearch;
         if (isTeacher) {
             const statusMap: Record<string, "DRAFT" | "ACTIVE" | "COMPLETED"> =
-            {
-                active: "ACTIVE",
-                completed: "COMPLETED",
-                draft: "DRAFT",
-            };
+                {
+                    active: "ACTIVE",
+                    completed: "COMPLETED",
+                    draft: "DRAFT",
+                };
             const mappedStatus = statusMap[selectedTab];
             return (
                 matchesSearch &&
@@ -1655,7 +1655,7 @@ const Assignments = () => {
                                     onClick={handleSelectAll}
                                 >
                                     {selectedAssignments.length ===
-                                        filteredAssignments.length ? (
+                                    filteredAssignments.length ? (
                                         <>
                                             <Square className="w-4 h-4 mr-2" />
                                             Batal Pilih Semua
@@ -2069,13 +2069,13 @@ const Assignments = () => {
                                                         !selectedMediaType ||
                                                         editAssignmentData
                                                             .classIds.length ===
-                                                        0 ||
+                                                            0 ||
                                                         submitting ||
                                                         materiUploading
                                                     }
                                                 >
                                                     {submitting ||
-                                                        materiUploading ? (
+                                                    materiUploading ? (
                                                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                                                     ) : null}
                                                     {materiUploading
@@ -2185,8 +2185,8 @@ const Assignments = () => {
                                                     {selectedAssignments.includes(
                                                         assignment.id,
                                                     ) && (
-                                                            <CheckCircle className="w-4 h-4 text-primary-foreground" />
-                                                        )}
+                                                        <CheckCircle className="w-4 h-4 text-primary-foreground" />
+                                                    )}
                                                 </button>
                                             </div>
                                         )}
@@ -2267,17 +2267,17 @@ const Assignments = () => {
                                                     <div className="flex items-center gap-1 text-sm text-muted-foreground">
                                                         <Tag className="w-4 h-4" />
                                                         {typeof assignment.mediaType ===
-                                                            "string"
+                                                        "string"
                                                             ? assignment.mediaType
                                                             : assignment
-                                                                .mediaType
-                                                                .name}
+                                                                  .mediaType
+                                                                  .name}
                                                     </div>
                                                 )}
                                                 {isTeacher &&
                                                     assignment.classes &&
                                                     assignment.classes.length >
-                                                    0 && (
+                                                        0 && (
                                                         <div className="flex items-center gap-2 flex-wrap">
                                                             <GraduationCap className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                                                             {assignment.classes
@@ -2315,7 +2315,7 @@ const Assignments = () => {
                                                 {!isTeacher &&
                                                     assignment.classes &&
                                                     assignment.classes.length >
-                                                    0 && (
+                                                        0 && (
                                                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                                                             <ClipboardList className="w-4 h-4" />
                                                             Kelas:{" "}
@@ -2341,7 +2341,7 @@ const Assignments = () => {
                                             {/* Progress for Teachers */}
                                             {isTeacher &&
                                                 assignment.status ===
-                                                "ACTIVE" &&
+                                                    "ACTIVE" &&
                                                 assignment.total > 0 && (
                                                     <div className="mt-4">
                                                         <div className="flex items-center justify-between text-sm mb-2">
@@ -2353,7 +2353,7 @@ const Assignments = () => {
                                                                     ((assignment.submissions ||
                                                                         0) /
                                                                         assignment.total) *
-                                                                    100,
+                                                                        100,
                                                                 )}
                                                                 %
                                                             </span>
@@ -2382,33 +2382,33 @@ const Assignments = () => {
                                                         onClick={() => {
                                                             // Extract base assignment properties
                                                             const baseAssignment: Assignment =
-                                                            {
-                                                                id: assignment.id,
-                                                                title: assignment.title,
-                                                                description:
-                                                                    assignment.description,
-                                                                mediaTypeId:
-                                                                    assignment.mediaTypeId,
-                                                                deadline:
-                                                                    assignment.deadline,
-                                                                status: isAssignmentWithSubmissions(
-                                                                    assignment,
-                                                                )
-                                                                    ? assignment.status
-                                                                    : "ACTIVE",
-                                                                createdById:
-                                                                    assignment.createdById,
-                                                                createdAt:
-                                                                    assignment.createdAt,
-                                                                updatedAt:
-                                                                    assignment.updatedAt,
-                                                                mediaType:
-                                                                    assignment.mediaType,
-                                                                createdBy:
-                                                                    assignment.createdBy,
-                                                                classes:
-                                                                    assignment.classes,
-                                                            };
+                                                                {
+                                                                    id: assignment.id,
+                                                                    title: assignment.title,
+                                                                    description:
+                                                                        assignment.description,
+                                                                    mediaTypeId:
+                                                                        assignment.mediaTypeId,
+                                                                    deadline:
+                                                                        assignment.deadline,
+                                                                    status: isAssignmentWithSubmissions(
+                                                                        assignment,
+                                                                    )
+                                                                        ? assignment.status
+                                                                        : "ACTIVE",
+                                                                    createdById:
+                                                                        assignment.createdById,
+                                                                    createdAt:
+                                                                        assignment.createdAt,
+                                                                    updatedAt:
+                                                                        assignment.updatedAt,
+                                                                    mediaType:
+                                                                        assignment.mediaType,
+                                                                    createdBy:
+                                                                        assignment.createdBy,
+                                                                    classes:
+                                                                        assignment.classes,
+                                                                };
                                                             setSelectedAssignment(
                                                                 baseAssignment,
                                                             );
@@ -2460,122 +2460,225 @@ const Assignments = () => {
                                                     {(assignment.status ===
                                                         "ACTIVE" ||
                                                         assignment.status ===
-                                                        "DRAFT") && (
-                                                            <DropdownMenu>
-                                                                <DropdownMenuTrigger
-                                                                    asChild
+                                                            "DRAFT") && (
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger
+                                                                asChild
+                                                            >
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    className="flex-1"
                                                                 >
-                                                                    <Button
-                                                                        variant="outline"
-                                                                        size="sm"
-                                                                        className="flex-1"
-                                                                    >
-                                                                        <MoreVertical className="w-4 h-4 mr-1" />
-                                                                        Lainnya
-                                                                    </Button>
-                                                                </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end">
+                                                                    <MoreVertical className="w-4 h-4 mr-1" />
+                                                                    Lainnya
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem
+                                                                    onClick={() =>
+                                                                        handleEditAssignment(
+                                                                            assignment,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Edit className="w-4 h-4 mr-2" />
+                                                                    Edit Tugas
+                                                                </DropdownMenuItem>
+                                                                {assignment.status ===
+                                                                    "DRAFT" && (
                                                                     <DropdownMenuItem
-                                                                        onClick={() =>
-                                                                            handleEditAssignment(
-                                                                                assignment,
-                                                                            )
-                                                                        }
+                                                                        onClick={async () => {
+                                                                            try {
+                                                                                setSubmitting(
+                                                                                    true,
+                                                                                );
+                                                                                const response =
+                                                                                    await assignmentService.updateAssignment(
+                                                                                        assignment.id,
+                                                                                        {
+                                                                                            status: "ACTIVE",
+                                                                                        },
+                                                                                    );
+                                                                                if (
+                                                                                    response.success
+                                                                                ) {
+                                                                                    toast(
+                                                                                        {
+                                                                                            title: "Tugas Diaktifkan! ✅",
+                                                                                            description:
+                                                                                                "Tugas berhasil diaktifkan",
+                                                                                        },
+                                                                                    );
+                                                                                    fetchAssignments();
+                                                                                }
+                                                                            } catch (error) {
+                                                                                const errorMessage =
+                                                                                    error instanceof
+                                                                                    Error
+                                                                                        ? error.message
+                                                                                        : "Gagal mengaktifkan tugas";
+                                                                                toast(
+                                                                                    {
+                                                                                        title: "Error",
+                                                                                        description:
+                                                                                            errorMessage,
+                                                                                        variant:
+                                                                                            "destructive",
+                                                                                    },
+                                                                                );
+                                                                            } finally {
+                                                                                setSubmitting(
+                                                                                    false,
+                                                                                );
+                                                                            }
+                                                                        }}
                                                                     >
-                                                                        <Edit className="w-4 h-4 mr-2" />
-                                                                        Edit Tugas
+                                                                        <Power className="w-4 h-4 mr-2" />
+                                                                        Aktifkan
                                                                     </DropdownMenuItem>
-                                                                    {assignment.status ===
-                                                                        "DRAFT" && (
-                                                                            <DropdownMenuItem
-                                                                                onClick={async () => {
-                                                                                    try {
-                                                                                        setSubmitting(
-                                                                                            true,
-                                                                                        );
-                                                                                        const response =
-                                                                                            await assignmentService.updateAssignment(
-                                                                                                assignment.id,
-                                                                                                {
-                                                                                                    status: "ACTIVE",
-                                                                                                },
-                                                                                            );
-                                                                                        if (
-                                                                                            response.success
-                                                                                        ) {
-                                                                                            toast(
-                                                                                                {
-                                                                                                    title: "Tugas Diaktifkan! ✅",
-                                                                                                    description:
-                                                                                                        "Tugas berhasil diaktifkan",
-                                                                                                },
-                                                                                            );
-                                                                                            fetchAssignments();
-                                                                                        }
-                                                                                    } catch (error) {
-                                                                                        const errorMessage =
-                                                                                            error instanceof
-                                                                                                Error
-                                                                                                ? error.message
-                                                                                                : "Gagal mengaktifkan tugas";
-                                                                                        toast(
-                                                                                            {
-                                                                                                title: "Error",
-                                                                                                description:
-                                                                                                    errorMessage,
-                                                                                                variant:
-                                                                                                    "destructive",
-                                                                                            },
-                                                                                        );
-                                                                                    } finally {
-                                                                                        setSubmitting(
-                                                                                            false,
-                                                                                        );
-                                                                                    }
-                                                                                }}
-                                                                            >
-                                                                                <Power className="w-4 h-4 mr-2" />
-                                                                                Aktifkan
-                                                                            </DropdownMenuItem>
-                                                                        )}
-                                                                    <DropdownMenuSeparator />
-                                                                    <DropdownMenuItem
-                                                                        onClick={() =>
-                                                                            handleDeleteAssignment(
-                                                                                assignment,
-                                                                                "draft",
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        <Archive className="w-4 h-4 mr-2" />
-                                                                        Simpan
-                                                                        sebagai
-                                                                        Draft
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem
-                                                                        onClick={() =>
-                                                                            handleDeleteAssignment(
-                                                                                assignment,
-                                                                                "delete",
-                                                                            )
-                                                                        }
-                                                                        className="text-destructive focus:text-destructive"
-                                                                    >
-                                                                        <Trash2 className="w-4 h-4 mr-2" />
-                                                                        Hapus
-                                                                        Permanen
-                                                                    </DropdownMenuItem>
-                                                                </DropdownMenuContent>
-                                                            </DropdownMenu>
-                                                        )}
+                                                                )}
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem
+                                                                    onClick={() =>
+                                                                        handleDeleteAssignment(
+                                                                            assignment,
+                                                                            "draft",
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <Archive className="w-4 h-4 mr-2" />
+                                                                    Simpan
+                                                                    sebagai
+                                                                    Draft
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem
+                                                                    onClick={() =>
+                                                                        handleDeleteAssignment(
+                                                                            assignment,
+                                                                            "delete",
+                                                                        )
+                                                                    }
+                                                                    className="text-destructive focus:text-destructive"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4 mr-2" />
+                                                                    Hapus
+                                                                    Permanen
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    )}
                                                 </>
                                             ) : (
                                                 <>
                                                     {isStudentAssignmentView(
                                                         assignment,
                                                     ) && (
-                                                            <>
-                                                                {/* Detail button - always visible for students */}
+                                                        <>
+                                                            {/* Detail button - always visible for students */}
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="flex-1"
+                                                                onClick={() => {
+                                                                    setSelectedStudentAssignment(
+                                                                        assignment,
+                                                                    );
+                                                                    setIsStudentDetailDialogOpen(
+                                                                        true,
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <Eye className="w-4 h-4 mr-1" />
+                                                                Lihat Detail
+                                                            </Button>
+
+                                                            {/* Student: Not submitted yet */}
+                                                            {assignment.status ===
+                                                                "not_submitted" &&
+                                                                assignment.assignmentStatus ===
+                                                                    "ACTIVE" && (
+                                                                    <Button
+                                                                        variant="gradient"
+                                                                        size="sm"
+                                                                        className="flex-1"
+                                                                        onClick={() => {
+                                                                            setSelectedStudentAssignment(
+                                                                                assignment,
+                                                                            );
+                                                                            setSubmissionFormData(
+                                                                                {
+                                                                                    title: "",
+                                                                                    description:
+                                                                                        "",
+                                                                                    image: null,
+                                                                                },
+                                                                            );
+                                                                            setIsSubmitDialogOpen(
+                                                                                true,
+                                                                            );
+                                                                        }}
+                                                                    >
+                                                                        <Upload className="w-4 h-4 mr-1" />
+                                                                        Kumpulkan
+                                                                    </Button>
+                                                                )}
+
+                                                            {/* Student: Needs revision */}
+                                                            {assignment.status ===
+                                                                "revision" &&
+                                                                assignment.assignmentStatus ===
+                                                                    "ACTIVE" && (
+                                                                    <Button
+                                                                        variant="accent"
+                                                                        size="sm"
+                                                                        className="flex-1"
+                                                                        onClick={() => {
+                                                                            setSelectedStudentAssignment(
+                                                                                assignment,
+                                                                            );
+                                                                            setSubmissionFormData(
+                                                                                {
+                                                                                    title: "",
+                                                                                    description:
+                                                                                        "",
+                                                                                    image: null,
+                                                                                },
+                                                                            );
+                                                                            setSubmissionImagePreview(
+                                                                                null,
+                                                                            );
+                                                                            if (
+                                                                                fileInputRef.current
+                                                                            )
+                                                                                fileInputRef.current.value =
+                                                                                    "";
+                                                                            setIsSubmitDialogOpen(
+                                                                                true,
+                                                                            );
+                                                                        }}
+                                                                    >
+                                                                        <RotateCcw className="w-4 h-4 mr-1" />
+                                                                        Revisi
+                                                                    </Button>
+                                                                )}
+
+                                                            {/* Student: Assignment closed - cannot submit */}
+                                                            {(assignment.status ===
+                                                                "not_submitted" ||
+                                                                assignment.status ===
+                                                                    "revision") &&
+                                                                assignment.assignmentStatus !==
+                                                                    "ACTIVE" && (
+                                                                    <span className="flex-1 text-center text-xs text-muted-foreground bg-muted/60 rounded-lg px-2 py-1.5 border border-border">
+                                                                        Tugas
+                                                                        Ditutup
+                                                                    </span>
+                                                                )}
+
+                                                            {/* Student: Graded */}
+                                                            {assignment.status ===
+                                                                "graded" && (
                                                                 <Button
                                                                     variant="outline"
                                                                     size="sm"
@@ -2584,138 +2687,35 @@ const Assignments = () => {
                                                                         setSelectedStudentAssignment(
                                                                             assignment,
                                                                         );
-                                                                        setIsStudentDetailDialogOpen(
+                                                                        setIsFeedbackDialogOpen(
                                                                             true,
                                                                         );
                                                                     }}
                                                                 >
-                                                                    <Eye className="w-4 h-4 mr-1" />
-                                                                    Lihat Detail
+                                                                    <MessageSquare className="w-4 h-4 mr-1" />
+                                                                    Feedback
                                                                 </Button>
+                                                            )}
 
-                                                                {/* Student: Not submitted yet */}
-                                                                {assignment.status ===
-                                                                    "not_submitted" &&
-                                                                    assignment.assignmentStatus ===
-                                                                    "ACTIVE" && (
-                                                                        <Button
-                                                                            variant="gradient"
-                                                                            size="sm"
-                                                                            className="flex-1"
-                                                                            onClick={() => {
-                                                                                setSelectedStudentAssignment(
-                                                                                    assignment,
-                                                                                );
-                                                                                setSubmissionFormData(
-                                                                                    {
-                                                                                        title: "",
-                                                                                        description:
-                                                                                            "",
-                                                                                        image: null,
-                                                                                    },
-                                                                                );
-                                                                                setIsSubmitDialogOpen(
-                                                                                    true,
-                                                                                );
-                                                                            }}
-                                                                        >
-                                                                            <Upload className="w-4 h-4 mr-1" />
-                                                                            Kumpulkan
-                                                                        </Button>
-                                                                    )}
-
-                                                                {/* Student: Needs revision */}
-                                                                {assignment.status ===
-                                                                    "revision" &&
-                                                                    assignment.assignmentStatus ===
-                                                                    "ACTIVE" && (
-                                                                        <Button
-                                                                            variant="accent"
-                                                                            size="sm"
-                                                                            className="flex-1"
-                                                                            onClick={() => {
-                                                                                setSelectedStudentAssignment(
-                                                                                    assignment,
-                                                                                );
-                                                                                setSubmissionFormData(
-                                                                                    {
-                                                                                        title: "",
-                                                                                        description:
-                                                                                            "",
-                                                                                        image: null,
-                                                                                    },
-                                                                                );
-                                                                                setSubmissionImagePreview(
-                                                                                    null,
-                                                                                );
-                                                                                if (
-                                                                                    fileInputRef.current
-                                                                                )
-                                                                                    fileInputRef.current.value =
-                                                                                        "";
-                                                                                setIsSubmitDialogOpen(
-                                                                                    true,
-                                                                                );
-                                                                            }}
-                                                                        >
-                                                                            <RotateCcw className="w-4 h-4 mr-1" />
-                                                                            Revisi
-                                                                        </Button>
-                                                                    )}
-
-                                                                {/* Student: Assignment closed - cannot submit */}
-                                                                {(assignment.status ===
-                                                                    "not_submitted" ||
-                                                                    assignment.status ===
-                                                                    "revision") &&
-                                                                    assignment.assignmentStatus !==
-                                                                    "ACTIVE" && (
-                                                                        <span className="flex-1 text-center text-xs text-muted-foreground bg-muted/60 rounded-lg px-2 py-1.5 border border-border">
-                                                                            Tugas
-                                                                            Ditutup
-                                                                        </span>
-                                                                    )}
-
-                                                                {/* Student: Graded */}
-                                                                {assignment.status ===
-                                                                    "graded" && (
-                                                                        <Button
-                                                                            variant="outline"
-                                                                            size="sm"
-                                                                            className="flex-1"
-                                                                            onClick={() => {
-                                                                                setSelectedStudentAssignment(
-                                                                                    assignment,
-                                                                                );
-                                                                                setIsFeedbackDialogOpen(
-                                                                                    true,
-                                                                                );
-                                                                            }}
-                                                                        >
-                                                                            <MessageSquare className="w-4 h-4 mr-1" />
-                                                                            Feedback
-                                                                        </Button>
-                                                                    )}
-
-                                                                {/* Student: Pending review */}
-                                                                {assignment.status ===
-                                                                    "pending" && (
-                                                                        <Button
-                                                                            variant="outline"
-                                                                            size="sm"
-                                                                            className="flex-1 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                                            onClick={() =>
-                                                                                handleCancelSubmission(
-                                                                                    assignment,
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            <XCircle className="w-4 h-4 mr-1" />
-                                                                            Batalkan
-                                                                        </Button>
-                                                                    )}
-                                                            </>
-                                                        )}
+                                                            {/* Student: Pending review */}
+                                                            {assignment.status ===
+                                                                "pending" && (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    className="flex-1 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                                    onClick={() =>
+                                                                        handleCancelSubmission(
+                                                                            assignment,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <XCircle className="w-4 h-4 mr-1" />
+                                                                    Batalkan
+                                                                </Button>
+                                                            )}
+                                                        </>
+                                                    )}
                                                 </>
                                             )}
                                         </div>
@@ -2772,7 +2772,7 @@ const Assignments = () => {
                                             >
                                                 <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                                                     {selectedAssignment.materiType ===
-                                                        "FILE" ? (
+                                                    "FILE" ? (
                                                         <FileText className="w-4 h-4 text-primary" />
                                                     ) : (
                                                         <Link className="w-4 h-4 text-primary" />
@@ -2781,7 +2781,7 @@ const Assignments = () => {
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-sm font-medium group-hover:text-primary transition-colors">
                                                         {selectedAssignment.materiType ===
-                                                            "FILE"
+                                                        "FILE"
                                                             ? "Download Materi"
                                                             : "Buka Link Materi"}
                                                     </p>
@@ -2853,7 +2853,7 @@ const Assignments = () => {
                                         {/* Class filter tabs */}
                                         {selectedAssignment.classes &&
                                             selectedAssignment.classes.length >
-                                            1 && (
+                                                1 && (
                                                 <Tabs
                                                     value={detailClassFilter}
                                                     onValueChange={
@@ -2897,11 +2897,11 @@ const Assignments = () => {
                                                 detailClassFilter === "Semua"
                                                     ? assignmentWithSubmissions.studentSubmissions
                                                     : assignmentWithSubmissions.studentSubmissions?.filter(
-                                                        (s) =>
-                                                            s.student
-                                                                ?.className ===
-                                                            detailClassFilter,
-                                                    );
+                                                          (s) =>
+                                                              s.student
+                                                                  ?.className ===
+                                                              detailClassFilter,
+                                                      );
                                             return filtered &&
                                                 filtered.length > 0 ? (
                                                 <div className="space-y-3 max-h-[360px] overflow-y-auto pr-2">
@@ -2941,10 +2941,10 @@ const Assignments = () => {
                                                                     •{" "}
                                                                     {sub.submittedAt
                                                                         ? new Date(
-                                                                            sub.submittedAt,
-                                                                        ).toLocaleDateString(
-                                                                            "id-ID",
-                                                                        )
+                                                                              sub.submittedAt,
+                                                                          ).toLocaleDateString(
+                                                                              "id-ID",
+                                                                          )
                                                                         : "Belum dikumpulkan"}
                                                                     {sub.revisionCount >
                                                                         0 &&
@@ -2959,26 +2959,26 @@ const Assignments = () => {
                                                                 )}
                                                                 {sub.status ===
                                                                     "PENDING" && (
-                                                                        <Button
-                                                                            variant="teal"
-                                                                            size="sm"
-                                                                            onClick={() =>
-                                                                                openReviewDialog(
-                                                                                    sub,
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            <Eye className="w-4 h-4 mr-1" />
-                                                                            Review
-                                                                        </Button>
-                                                                    )}
+                                                                    <Button
+                                                                        variant="teal"
+                                                                        size="sm"
+                                                                        onClick={() =>
+                                                                            openReviewDialog(
+                                                                                sub,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Eye className="w-4 h-4 mr-1" />
+                                                                        Review
+                                                                    </Button>
+                                                                )}
                                                                 {sub.status ===
                                                                     "REVISION" && (
-                                                                        <span className="text-xs text-accent whitespace-nowrap">
-                                                                            Menunggu
-                                                                            revisi
-                                                                        </span>
-                                                                    )}
+                                                                    <span className="text-xs text-accent whitespace-nowrap">
+                                                                        Menunggu
+                                                                        revisi
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     ))}
@@ -2986,7 +2986,7 @@ const Assignments = () => {
                                             ) : (
                                                 <p className="text-muted-foreground text-sm text-center py-8">
                                                     {detailClassFilter ===
-                                                        "Semua"
+                                                    "Semua"
                                                         ? "Belum ada siswa yang mengumpulkan"
                                                         : `Belum ada pengumpulan dari kelas ${detailClassFilter}`}
                                                 </p>
@@ -3023,12 +3023,12 @@ const Assignments = () => {
                                         {getStatusBadge(
                                             selectedStudentAssignment.status,
                                             selectedStudentAssignment.grade ??
-                                            undefined,
+                                                undefined,
                                         )}
                                         {selectedStudentAssignment.status ===
                                             "graded" &&
                                             selectedStudentAssignment.grade !==
-                                            null && (
+                                                null && (
                                                 <span className="text-2xl font-display font-bold text-green ml-auto">
                                                     {
                                                         selectedStudentAssignment.grade
@@ -3100,7 +3100,7 @@ const Assignments = () => {
                                             >
                                                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                                                     {selectedStudentAssignment.materiType ===
-                                                        "FILE" ? (
+                                                    "FILE" ? (
                                                         <FileText className="w-4 h-4 text-primary" />
                                                     ) : (
                                                         <Link className="w-4 h-4 text-primary" />
@@ -3108,7 +3108,7 @@ const Assignments = () => {
                                                 </div>
                                                 <span className="text-sm font-medium group-hover:text-primary transition-colors flex-1">
                                                     {selectedStudentAssignment.materiType ===
-                                                        "FILE"
+                                                    "FILE"
                                                         ? "Download Materi"
                                                         : "Buka Link Materi"}
                                                 </span>
@@ -3140,10 +3140,10 @@ const Assignments = () => {
                                                 </p>
                                                 <p className="font-semibold text-sm mt-0.5">
                                                     {typeof selectedStudentAssignment.mediaType ===
-                                                        "string"
+                                                    "string"
                                                         ? selectedStudentAssignment.mediaType
                                                         : selectedStudentAssignment
-                                                            .mediaType.name}
+                                                              .mediaType.name}
                                                 </p>
                                             </div>
                                         )}
@@ -3180,111 +3180,123 @@ const Assignments = () => {
                                                     </p>
                                                 </div>
                                             )}
+                                        {selectedStudentAssignment.artworkSize && (
+                                            <div className="p-3 bg-muted/50 rounded-xl">
+                                                <p className="text-xs text-muted-foreground">
+                                                    Ukuran Karya
+                                                </p>
+                                                <p className="font-semibold text-sm mt-0.5">
+                                                    {
+                                                        selectedStudentAssignment.artworkSize
+                                                    }
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Action buttons */}
                                     <div className="flex flex-col gap-2 pt-1">
                                         {selectedStudentAssignment.status ===
                                             "not_submitted" && (
-                                                <Button
-                                                    variant="gradient"
-                                                    className="w-full"
-                                                    onClick={() => {
-                                                        setIsStudentDetailDialogOpen(
-                                                            false,
-                                                        );
-                                                        setSubmissionFormData({
-                                                            title: "",
-                                                            description: "",
-                                                            image: null,
-                                                        });
-                                                        setIsSubmitDialogOpen(true);
-                                                    }}
-                                                >
-                                                    <Upload className="w-4 h-4 mr-2" />
-                                                    Kumpulkan Tugas
-                                                </Button>
-                                            )}
+                                            <Button
+                                                variant="gradient"
+                                                className="w-full"
+                                                onClick={() => {
+                                                    setIsStudentDetailDialogOpen(
+                                                        false,
+                                                    );
+                                                    setSubmissionFormData({
+                                                        title: "",
+                                                        description: "",
+                                                        image: null,
+                                                    });
+                                                    setIsSubmitDialogOpen(true);
+                                                }}
+                                            >
+                                                <Upload className="w-4 h-4 mr-2" />
+                                                Kumpulkan Tugas
+                                            </Button>
+                                        )}
                                         {selectedStudentAssignment.status ===
                                             "revision" && (
-                                                <Button
-                                                    variant="accent"
-                                                    className="w-full"
-                                                    onClick={() => {
-                                                        setIsStudentDetailDialogOpen(
-                                                            false,
-                                                        );
-                                                        setSubmissionFormData({
-                                                            title: "",
-                                                            description: "",
-                                                            image: null,
-                                                        });
-                                                        setSubmissionImagePreview(
-                                                            null,
-                                                        );
-                                                        if (fileInputRef.current)
-                                                            fileInputRef.current.value =
-                                                                "";
-                                                        setIsSubmitDialogOpen(true);
-                                                    }}
-                                                >
-                                                    <RotateCcw className="w-4 h-4 mr-2" />
-                                                    Upload Revisi
-                                                </Button>
-                                            )}
+                                            <Button
+                                                variant="accent"
+                                                className="w-full"
+                                                onClick={() => {
+                                                    setIsStudentDetailDialogOpen(
+                                                        false,
+                                                    );
+                                                    setSubmissionFormData({
+                                                        title: "",
+                                                        description: "",
+                                                        image: null,
+                                                    });
+                                                    setSubmissionImagePreview(
+                                                        null,
+                                                    );
+                                                    if (fileInputRef.current)
+                                                        fileInputRef.current.value =
+                                                            "";
+                                                    setIsSubmitDialogOpen(true);
+                                                }}
+                                            >
+                                                <RotateCcw className="w-4 h-4 mr-2" />
+                                                Upload Revisi
+                                            </Button>
+                                        )}
                                         {selectedStudentAssignment.status ===
                                             "graded" && (
+                                            <Button
+                                                variant="gradient"
+                                                className="w-full"
+                                                onClick={() => {
+                                                    setIsStudentDetailDialogOpen(
+                                                        false,
+                                                    );
+                                                    setIsFeedbackDialogOpen(
+                                                        true,
+                                                    );
+                                                }}
+                                            >
+                                                <Star className="w-4 h-4 mr-2" />
+                                                Lihat Feedback & Sertifikat
+                                            </Button>
+                                        )}
+                                        {selectedStudentAssignment.status ===
+                                            "pending" && (
+                                            <div className="flex gap-2">
                                                 <Button
-                                                    variant="gradient"
-                                                    className="w-full"
+                                                    variant="outline"
+                                                    className="flex-1"
                                                     onClick={() => {
                                                         setIsStudentDetailDialogOpen(
                                                             false,
                                                         );
-                                                        setIsFeedbackDialogOpen(
-                                                            true,
+                                                        handleEditSubmission(
+                                                            selectedStudentAssignment,
                                                         );
                                                     }}
                                                 >
-                                                    <Star className="w-4 h-4 mr-2" />
-                                                    Lihat Feedback & Sertifikat
+                                                    <Edit className="w-4 h-4 mr-2" />
+                                                    Edit Karya
                                                 </Button>
-                                            )}
-                                        {selectedStudentAssignment.status ===
-                                            "pending" && (
-                                                <div className="flex gap-2">
-                                                    <Button
-                                                        variant="outline"
-                                                        className="flex-1"
-                                                        onClick={() => {
-                                                            setIsStudentDetailDialogOpen(
-                                                                false,
-                                                            );
-                                                            handleEditSubmission(
-                                                                selectedStudentAssignment,
-                                                            );
-                                                        }}
-                                                    >
-                                                        <Edit className="w-4 h-4 mr-2" />
-                                                        Edit Karya
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline"
-                                                        className="flex-1 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                        onClick={() => {
-                                                            setIsStudentDetailDialogOpen(
-                                                                false,
-                                                            );
-                                                            handleCancelSubmission(
-                                                                selectedStudentAssignment,
-                                                            );
-                                                        }}
-                                                    >
-                                                        <XCircle className="w-4 h-4 mr-2" />
-                                                        Batalkan
-                                                    </Button>
-                                                </div>
-                                            )}
+                                                <Button
+                                                    variant="outline"
+                                                    className="flex-1 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                    onClick={() => {
+                                                        setIsStudentDetailDialogOpen(
+                                                            false,
+                                                        );
+                                                        handleCancelSubmission(
+                                                            selectedStudentAssignment,
+                                                        );
+                                                    }}
+                                                >
+                                                    <XCircle className="w-4 h-4 mr-2" />
+                                                    Batalkan
+                                                </Button>
+                                            </div>
+                                        )}
                                         <Button
                                             variant="outline"
                                             className="w-full"
@@ -3351,8 +3363,8 @@ const Assignments = () => {
 
                             {/* Artwork Preview - Side by Side if revision exists */}
                             {selectedSubmission.revisionCount > 0 &&
-                                selectedSubmission.imageHistory &&
-                                selectedSubmission.imageHistory.length > 1 ? (
+                            selectedSubmission.imageHistory &&
+                            selectedSubmission.imageHistory.length > 1 ? (
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between">
                                         <h4 className="font-semibold text-sm">
@@ -3390,9 +3402,9 @@ const Assignments = () => {
                                                     const prevImage =
                                                         selectedSubmission
                                                             .imageHistory?.[
-                                                        selectedSubmission
-                                                            .imageHistory
-                                                            .length - 2
+                                                            selectedSubmission
+                                                                .imageHistory
+                                                                .length - 2
                                                         ];
                                                     if (prevImage) {
                                                         setSelectedImageUrl(
@@ -3438,15 +3450,15 @@ const Assignments = () => {
                                                         .imageHistory.length - 2
                                                 ]?.submittedAt
                                                     ? new Date(
-                                                        selectedSubmission
-                                                            .imageHistory[
-                                                            selectedSubmission
-                                                                .imageHistory
-                                                                .length - 2
-                                                        ].submittedAt,
-                                                    ).toLocaleDateString(
-                                                        "id-ID",
-                                                    )
+                                                          selectedSubmission
+                                                              .imageHistory[
+                                                              selectedSubmission
+                                                                  .imageHistory
+                                                                  .length - 2
+                                                          ].submittedAt,
+                                                      ).toLocaleDateString(
+                                                          "id-ID",
+                                                      )
                                                     : ""}
                                             </p>
                                         </div>
@@ -3510,7 +3522,7 @@ const Assignments = () => {
                                     {/* All Versions History */}
                                     {selectedSubmission.imageHistory &&
                                         selectedSubmission.imageHistory.length >
-                                        2 && (
+                                            2 && (
                                             <div className="mt-4 p-3 bg-muted/30 rounded-xl">
                                                 <p className="text-xs font-semibold text-muted-foreground mb-2">
                                                     Riwayat Semua Versi:
@@ -3636,7 +3648,7 @@ const Assignments = () => {
                                                         value === "" ||
                                                         (parseInt(value) >= 0 &&
                                                             parseInt(value) <=
-                                                            100)
+                                                                100)
                                                     ) {
                                                         setGradeValue(value);
                                                     }
@@ -3746,14 +3758,14 @@ const Assignments = () => {
                                 className="flex items-center gap-2 p-2 bg-background rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-all group"
                             >
                                 {selectedStudentAssignment.materiType ===
-                                    "FILE" ? (
+                                "FILE" ? (
                                     <FileText className="w-4 h-4 text-primary flex-shrink-0" />
                                 ) : (
                                     <Link className="w-4 h-4 text-primary flex-shrink-0" />
                                 )}
                                 <span className="text-sm font-medium text-primary group-hover:underline flex-1 truncate">
                                     {selectedStudentAssignment.materiType ===
-                                        "FILE"
+                                    "FILE"
                                         ? "Download Materi"
                                         : "Buka Link Materi"}
                                 </span>
@@ -3816,8 +3828,8 @@ const Assignments = () => {
                                             const latestVersion =
                                                 selectedStudentAssignment
                                                     .imageHistory?.[
-                                                selectedStudentAssignment
-                                                    .imageHistory.length - 1
+                                                    selectedStudentAssignment
+                                                        .imageHistory.length - 1
                                                 ];
                                             if (latestVersion) {
                                                 setSelectedImageUrl(
@@ -4069,7 +4081,7 @@ const Assignments = () => {
                                 ) : (
                                     <>
                                         {selectedStudentAssignment?.status ===
-                                            "revision"
+                                        "revision"
                                             ? "Kirim Revisi"
                                             : "Kumpulkan"}
                                     </>
@@ -4123,14 +4135,14 @@ const Assignments = () => {
                                 {/* Revision Count */}
                                 {selectedStudentAssignment.revisionCount >
                                     0 && (
-                                        <p className="text-xs text-center text-muted-foreground">
-                                            Disetujui setelah{" "}
-                                            {
-                                                selectedStudentAssignment.revisionCount
-                                            }
-                                            x revisi
-                                        </p>
-                                    )}
+                                    <p className="text-xs text-center text-muted-foreground">
+                                        Disetujui setelah{" "}
+                                        {
+                                            selectedStudentAssignment.revisionCount
+                                        }
+                                        x revisi
+                                    </p>
+                                )}
 
                                 {/* Certificate Button */}
                                 <Button
@@ -4143,9 +4155,9 @@ const Assignments = () => {
                                                 submissions.find(
                                                     (s) =>
                                                         s.studentId ===
-                                                        user.id &&
+                                                            user.id &&
                                                         s.assignmentId ===
-                                                        selectedStudentAssignment.id,
+                                                            selectedStudentAssignment.id,
                                                 );
 
                                             if (!currentSubmission) {
@@ -4701,8 +4713,8 @@ const Assignments = () => {
                                         onChange={(e) =>
                                             setDeleteAction(
                                                 e.target.value as
-                                                | "delete"
-                                                | "draft",
+                                                    | "delete"
+                                                    | "draft",
                                             )
                                         }
                                         className="w-4 h-4 text-primary"
@@ -4737,8 +4749,8 @@ const Assignments = () => {
                                         onChange={(e) =>
                                             setDeleteAction(
                                                 e.target.value as
-                                                | "delete"
-                                                | "draft",
+                                                    | "delete"
+                                                    | "draft",
                                             )
                                         }
                                         className="w-4 h-4 text-destructive"
