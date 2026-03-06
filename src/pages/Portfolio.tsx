@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Search, Image, Grid, List, Award, Calendar, Tag, User as UserIcon, Palette } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { portfolioService } from "@/services/portfolio.service";
 import { useToast } from "@/hooks/use-toast";
 import type { Portfolio } from "@/types/api";
@@ -36,9 +37,11 @@ const Portfolio = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMediaType, setSelectedMediaType] = useState("Semua");
+  const [selectedClass, setSelectedClass] = useState("Semua");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedWork, setSelectedWork] = useState<Portfolio | null>(null);
   const [mediaTypes, setMediaTypes] = useState<string[]>(["Semua"]);
+  const [classes, setClasses] = useState<string[]>(["Semua"]);
 
   const isStudent = user.role === "student";
 
@@ -63,13 +66,20 @@ const Portfolio = () => {
           }
           
           setPortfolios(portfoliosData);
-          // Extract unique media types from assignment.mediaType.name
+          // Extract unique media types
           const uniqueMediaTypes = ["Semua", ...Array.from(new Set(
             portfoliosData
               .map(p => p.assignment?.mediaType?.name || p.mediaType?.name)
               .filter(Boolean)
           ))];
           setMediaTypes(uniqueMediaTypes);
+          // Extract unique classes from students
+          const uniqueClasses = ["Semua", ...Array.from(new Set(
+            portfoliosData
+              .map(p => p.student?.className)
+              .filter(Boolean)
+          )).sort()];
+          setClasses(uniqueClasses);
         }
       } catch (error) {
         console.error("Error fetching portfolios:", error);
@@ -89,13 +99,20 @@ const Portfolio = () => {
     fetchPortfolios();
   }, [searchQuery, toast]);
 
-  const filteredPortfolios = portfolios.filter((portfolio) => {
-    const matchesSearch = portfolio.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         portfolio.student?.name?.toLowerCase().includes(searchQuery.toLowerCase());
-    const portfolioMediaType = portfolio.assignment?.mediaType?.name || portfolio.mediaType?.name;
-    const matchesMediaType = selectedMediaType === "Semua" || portfolioMediaType === selectedMediaType;
-    return matchesSearch && matchesMediaType;
-  });
+  const filteredPortfolios = portfolios
+    .filter((portfolio) => {
+      const matchesSearch = portfolio.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           portfolio.student?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+      const portfolioMediaType = portfolio.assignment?.mediaType?.name || portfolio.mediaType?.name;
+      const matchesMediaType = selectedMediaType === "Semua" || portfolioMediaType === selectedMediaType;
+      const matchesClass = selectedClass === "Semua" || portfolio.student?.className === selectedClass;
+      return matchesSearch && matchesMediaType && matchesClass;
+    })
+    .sort((a, b) => {
+      const gradeA = typeof a.grade === 'number' ? a.grade : parseInt(a.grade as string) || 0;
+      const gradeB = typeof b.grade === 'number' ? b.grade : parseInt(b.grade as string) || 0;
+      return gradeB - gradeA;
+    });
 
   const getGradeColor = (grade: number | string) => {
     const gradeNum = typeof grade === 'number' ? grade : parseInt(grade);
@@ -126,20 +143,54 @@ const Portfolio = () => {
       {/* Filters */}
       <Card className="card-playful">
         <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Cari karya atau nama siswa..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 rounded-xl"
-              />
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col md:flex-row gap-3">
+              {/* Search */}
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cari karya atau nama siswa..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 rounded-xl"
+                />
+              </div>
+
+              {/* Class Filter */}
+              <Select value={selectedClass} onValueChange={setSelectedClass}>
+                <SelectTrigger className="w-full md:w-44 rounded-xl">
+                  <SelectValue placeholder="Semua Kelas" />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes.map((cls) => (
+                    <SelectItem key={cls} value={cls}>{cls === "Semua" ? "Semua Kelas" : `Kelas ${cls}`}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* View Mode */}
+              <div className="flex items-center gap-1 bg-muted/50 rounded-xl p-1 self-start">
+                <Button
+                  variant={viewMode === "grid" ? "default" : "ghost"}
+                  size="icon"
+                  className="h-8 w-8 rounded-lg"
+                  onClick={() => setViewMode("grid")}
+                >
+                  <Grid className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "list" ? "default" : "ghost"}
+                  size="icon"
+                  className="h-8 w-8 rounded-lg"
+                  onClick={() => setViewMode("list")}
+                >
+                  <List className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
 
             {/* Media Type Tabs */}
-            <Tabs value={selectedMediaType} onValueChange={setSelectedMediaType} className="w-full md:w-auto">
+            <Tabs value={selectedMediaType} onValueChange={setSelectedMediaType} className="w-full">
               <TabsList className="h-10 rounded-xl bg-muted/50 overflow-x-auto flex-nowrap">
                 {mediaTypes.map((mt) => (
                   <TabsTrigger
@@ -152,26 +203,6 @@ const Portfolio = () => {
                 ))}
               </TabsList>
             </Tabs>
-
-            {/* View Mode */}
-            <div className="flex items-center gap-1 bg-muted/50 rounded-xl p-1">
-              <Button
-                variant={viewMode === "grid" ? "default" : "ghost"}
-                size="icon"
-                className="h-8 w-8 rounded-lg"
-                onClick={() => setViewMode("grid")}
-              >
-                <Grid className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={viewMode === "list" ? "default" : "ghost"}
-                size="icon"
-                className="h-8 w-8 rounded-lg"
-                onClick={() => setViewMode("list")}
-              >
-                <List className="w-4 h-4" />
-              </Button>
-            </div>
           </div>
         </CardContent>
       </Card>
@@ -198,13 +229,13 @@ const Portfolio = () => {
                   <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/20 to-transparent" />
                   
                   {/* Grade Badge - Top Right, Not overlapping image badly */}
-                  {portfolio.grade && (
+                  {/* {portfolio.grade && (
                     <div className="absolute top-3 right-3">
                       <span className={`px-3 py-1.5 rounded-xl text-sm font-bold shadow-lg ${getGradeColor(portfolio.grade)}`}>
                         {portfolio.grade}
                       </span>
                     </div>
-                  )}
+                  )} */}
 
                   {/* Bottom Info Overlay */}
                   <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
@@ -244,21 +275,14 @@ const Portfolio = () => {
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <h3 className="font-display font-bold text-lg truncate">{portfolio.title}</h3>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                          <UserIcon className="w-4 h-4" />
-                          <span>{portfolio.student?.name || "-"}</span>
-                          <span className="opacity-50">•</span>
-                          <span>{portfolio.student?.className || "-"}</span>
-                        </div>
+                    <div className="min-w-0">
+                      <h3 className="font-display font-bold text-lg truncate">{portfolio.title}</h3>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                        <UserIcon className="w-4 h-4" />
+                        <span>{portfolio.student?.name || "-"}</span>
+                        <span className="opacity-50">•</span>
+                        <span>{portfolio.student?.className || "-"}</span>
                       </div>
-                      {portfolio.grade && (
-                        <span className={`px-3 py-1.5 rounded-xl text-sm font-bold flex-shrink-0 ${getGradeColor(portfolio.grade)}`}>
-                          {portfolio.grade}
-                        </span>
-                      )}
                     </div>
                     
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
@@ -285,11 +309,11 @@ const Portfolio = () => {
           </DialogHeader>
           {selectedWork && (
             <div className="space-y-4">
-              <div className="aspect-video rounded-xl overflow-hidden">
+              <div className="rounded-xl overflow-hidden bg-muted/30 flex items-center justify-center">
                 <img
-                  src={getPortfolioImageUrl(selectedWork, 'medium') || `https://picsum.photos/seed/${selectedWork.title}/800/450`}
+                  src={getPortfolioImageUrl(selectedWork, 'full') || `https://picsum.photos/seed/${selectedWork.title}/800/600`}
                   alt={selectedWork.title || "Portfolio"}
-                  className="w-full h-full object-cover"
+                  className="w-full h-auto max-h-[60vh] object-contain"
                 />
               </div>
               

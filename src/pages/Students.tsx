@@ -38,6 +38,7 @@ const Students = () => {
   const { toast } = useToast();
   const [students, setStudents] = useState<User[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
+  const [allClasses, setAllClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClass, setSelectedClass] = useState("Semua");
@@ -125,7 +126,7 @@ const Students = () => {
 
   const fetchClasses = useCallback(async () => {
     try {
-      // For teachers, only fetch their assigned classes
+      // For teachers, filter tabs only show their classes
       if (isTeacher && user.classes && user.classes.length > 0) {
         setClasses(user.classes.map(c => ({ id: c.id, name: c.name, description: c.description, createdAt: "", updatedAt: "" })));
       } else {
@@ -134,6 +135,13 @@ const Students = () => {
           const classesData = Array.isArray(classesRes.data) ? classesRes.data : classesRes.data.data || [];
           setClasses(classesData);
         }
+      }
+
+      // Always fetch all classes for the edit/add dialog dropdown
+      const allClassesRes = await classService.getClasses({ limit: 100 });
+      if (allClassesRes.success && allClassesRes.data) {
+        const allClassesData = Array.isArray(allClassesRes.data) ? allClassesRes.data : allClassesRes.data.data || [];
+        setAllClasses(allClassesData);
       }
     } catch (error) {
       console.error("Error fetching classes:", error);
@@ -263,18 +271,13 @@ const Students = () => {
         classId: formData.classId, // Allow updating class for student
       });
       if (response.success) {
-        // Refresh students list
-        const studentsRes = await userService.getUsers({ role: 'STUDENT', limit: 100 });
-        if (studentsRes.success && studentsRes.data) {
-          const studentsData = Array.isArray(studentsRes.data) ? studentsRes.data : studentsRes.data.data || [];
-          setStudents(studentsData);
-        }
         setIsEditDialogOpen(false);
         setSelectedStudent(null);
         toast({
           title: "Data Diperbarui! ✅",
           description: "Data siswa berhasil diperbarui",
         });
+        fetchStudents(); // Refresh with correct filter (teacher's classes only if applicable)
       }
     } catch (error) {
       const errorMessage = error instanceof Error 
@@ -608,7 +611,7 @@ const Students = () => {
                       <SelectValue placeholder="Pilih kelas" />
                     </SelectTrigger>
                     <SelectContent>
-                      {classes.map((cls) => (
+                      {allClasses.map((cls) => (
                         <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
                       ))}
                     </SelectContent>
@@ -824,7 +827,7 @@ const Students = () => {
                   <SelectValue />
                 </SelectTrigger>
                     <SelectContent>
-                      {classes.map((cls) => (
+                      {allClasses.map((cls) => (
                         <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
                       ))}
                     </SelectContent>
