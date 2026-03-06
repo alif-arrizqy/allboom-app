@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Portfolio from "./pages/Portfolio";
 import Profile from "./pages/Profile";
 import Students from "./pages/Students";
+import Classes from "./pages/Classes";
 import Assignments from "./pages/Assignments";
 import Export from "./pages/Export";
 import CertificatePage from "./pages/CertificatePage";
@@ -34,6 +35,9 @@ const App = () => (
           </Route>
           <Route path="/students" element={<DashboardLayout />}>
             <Route index element={<Students />} />
+          </Route>
+          <Route path="/classes" element={<DashboardLayout />}>
+            <Route index element={<Classes />} />
           </Route>
           <Route path="/assignments" element={<DashboardLayout />}>
             <Route index element={<Assignments />} />

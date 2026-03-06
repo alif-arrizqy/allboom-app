@@ -12,15 +12,16 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { 
-  LayoutDashboard, 
-  Image, 
-  User, 
-  Users, 
-  ClipboardList, 
+import {
+  LayoutDashboard,
+  Image,
+  User,
+  Users,
+  ClipboardList,
   LogOut,
   Palette,
   FileDown,
+  BookOpen,
 } from "lucide-react";
 import type { FrontendUser } from "@/layouts/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ interface AppSidebarProps {
 const teacherMenuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Daftar Siswa", url: "/students", icon: Users },
+  { title: "Manajemen Kelas", url: "/classes", icon: BookOpen },
   { title: "Tugas", url: "/assignments", icon: ClipboardList },
   { title: "Portfolio", url: "/portfolio", icon: Image },
   { title: "Export Nilai", url: "/export", icon: FileDown },
