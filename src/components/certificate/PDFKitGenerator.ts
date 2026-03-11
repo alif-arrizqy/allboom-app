@@ -13,6 +13,21 @@ export interface CertificateData {
     imageUrl?: string;
 }
 
+// Helper: format text ke Title Case (setiap kata kapital di awal,
+// dan sisanya lowercase) untuk merapikan input yang ALL CAPS / acak.
+const toTitleCase = (value: string): string => {
+    if (!value) return "";
+    return value
+        .trim()
+        .split(/\s+/)
+        .map((word) => {
+            if (!word) return "";
+            const lower = word.toLowerCase();
+            return lower.charAt(0).toUpperCase() + lower.slice(1);
+        })
+        .join(" ");
+};
+
 // Helper to load image as base64
 async function loadImageAsBase64(url: string): Promise<string> {
     const response = await fetch(url);
@@ -145,13 +160,11 @@ export const generateCertificatePDF = async (
     doc.setFont("helvetica", "bold");
     doc.text("NAMA SENIMAN", leftColCenterX, topY + 25, { align: "center" });
 
-    // Artist Name - multi-line, dynamic font, max width 300pt
+    // Artist Name - multi-line, fixed font size, max width 300pt
     const nameMaxWidth = 300;
-    const nameLines = doc.splitTextToSize(
-        data.recipientName.toUpperCase(),
-        nameMaxWidth,
-    );
-    const nameFontSize = nameLines.length > 2 ? 18 : nameLines.length > 1 ? 22 : 28;
+    const formattedName = toTitleCase(data.recipientName);
+    const nameLines = doc.splitTextToSize(formattedName, nameMaxWidth);
+    const nameFontSize = 24; // fixed size untuk konsistensi
     doc.setFontSize(nameFontSize);
     doc.setTextColor(15, 23, 42); // slate900
     doc.setFont("helvetica", "bold");
@@ -177,12 +190,12 @@ export const generateCertificatePDF = async (
     doc.setFont("helvetica", "bold");
     doc.text("JUDUL KARYA", leftColCenterX, decorY + 22, { align: "center" });
 
-    // Artwork Title - multi-line, dynamic font
+    // Artwork Title - multi-line, fixed font size
     const titleMaxWidth = 300;
-    const titleText = `"${data.artworkTitle}"`;
+    const formattedTitle = toTitleCase(data.artworkTitle);
+    const titleText = `"${formattedTitle}"`;
     const titleLines = doc.splitTextToSize(titleText, titleMaxWidth);
-    const titleFontSize =
-        titleLines.length > 3 ? 12 : titleLines.length > 2 ? 16 : titleLines.length > 1 ? 18 : 22;
+    const titleFontSize = 18; // fixed size untuk judul
     doc.setFontSize(titleFontSize);
     doc.setTextColor(30, 41, 59); // slate800
     doc.setFont("helvetica", "bolditalic");
