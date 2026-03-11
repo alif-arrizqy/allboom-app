@@ -124,14 +124,14 @@ const Portfolio = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 px-0 sm:px-0">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-display font-bold">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-display font-bold break-words">
             Galeri <span className="text-gradient">Karya Siswa</span>
           </h2>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
             {isStudent 
               ? "Koleksi karya terbaik yang sudah disetujui dan dinilai oleh guru"
               : "Koleksi semua karya siswa yang sudah Anda setujui dan nilai"
@@ -141,24 +141,24 @@ const Portfolio = () => {
       </div>
 
       {/* Filters */}
-      <Card className="card-playful">
-        <CardContent className="p-4">
+      <Card className="card-playful overflow-hidden">
+        <CardContent className="p-3 sm:p-4">
           <div className="flex flex-col gap-3">
-            <div className="flex flex-col md:flex-row gap-3">
-              {/* Search */}
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Cari karya atau nama siswa..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 rounded-xl"
-                />
-              </div>
+            {/* Search - full width on mobile */}
+            <div className="relative w-full min-w-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Cari karya atau nama siswa..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 rounded-xl w-full"
+              />
+            </div>
 
-              {/* Class Filter */}
+            {/* Class + View Mode row on mobile; full row on desktop */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <Select value={selectedClass} onValueChange={setSelectedClass}>
-                <SelectTrigger className="w-full md:w-44 rounded-xl">
+                <SelectTrigger className="w-full min-w-0 sm:w-44 rounded-xl flex-1 sm:flex-initial">
                   <SelectValue placeholder="Semua Kelas" />
                 </SelectTrigger>
                 <SelectContent>
@@ -167,36 +167,36 @@ const Portfolio = () => {
                   ))}
                 </SelectContent>
               </Select>
-
-              {/* View Mode */}
-              <div className="flex items-center gap-1 bg-muted/50 rounded-xl p-1 self-start">
+              <div className="flex items-center gap-1 bg-muted/50 rounded-xl p-1 shrink-0">
                 <Button
                   variant={viewMode === "grid" ? "default" : "ghost"}
                   size="icon"
-                  className="h-8 w-8 rounded-lg"
+                  className="h-9 w-9 rounded-lg touch-manipulation"
                   onClick={() => setViewMode("grid")}
+                  aria-label="Tampilan grid"
                 >
                   <Grid className="w-4 h-4" />
                 </Button>
                 <Button
                   variant={viewMode === "list" ? "default" : "ghost"}
                   size="icon"
-                  className="h-8 w-8 rounded-lg"
+                  className="h-9 w-9 rounded-lg touch-manipulation"
                   onClick={() => setViewMode("list")}
+                  aria-label="Tampilan list"
                 >
                   <List className="w-4 h-4" />
                 </Button>
               </div>
             </div>
 
-            {/* Media Type Tabs */}
-            <Tabs value={selectedMediaType} onValueChange={setSelectedMediaType} className="w-full">
-              <TabsList className="h-10 rounded-xl bg-muted/50 overflow-x-auto flex-nowrap">
+            {/* Media Type Tabs - horizontal scroll on mobile */}
+            <Tabs value={selectedMediaType} onValueChange={setSelectedMediaType} className="w-full min-w-0">
+              <TabsList className="h-10 rounded-xl bg-muted/50 overflow-x-auto flex-nowrap w-full justify-start sm:justify-start gap-0.5 pb-1 -mx-0.5 px-0.5 min-h-[2.75rem]">
                 {mediaTypes.map((mt) => (
                   <TabsTrigger
                     key={mt}
                     value={mt}
-                    className="rounded-lg whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    className="rounded-lg whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground shrink-0 px-3 sm:px-4 py-2 text-sm"
                   >
                     {mt}
                   </TabsTrigger>
@@ -209,15 +209,15 @@ const Portfolio = () => {
 
       {/* Portfolio Grid/List */}
       {loading ? (
-        <div className="text-center py-16">
-          <p className="text-muted-foreground">Memuat portfolio...</p>
+        <div className="text-center py-12 sm:py-16">
+          <p className="text-muted-foreground text-sm sm:text-base">Memuat portfolio...</p>
         </div>
       ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredPortfolios.map((portfolio) => (
             <Card 
               key={portfolio.id} 
-              className="card-playful group overflow-hidden cursor-pointer"
+              className="card-playful group overflow-hidden cursor-pointer touch-manipulation"
               onClick={() => setSelectedWork(portfolio)}
             >
               <div className="relative aspect-square overflow-hidden">
@@ -227,69 +227,56 @@ const Portfolio = () => {
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/20 to-transparent" />
-                  
-                  {/* Grade Badge - Top Right, Not overlapping image badly */}
-                  {/* {portfolio.grade && (
-                    <div className="absolute top-3 right-3">
-                      <span className={`px-3 py-1.5 rounded-xl text-sm font-bold shadow-lg ${getGradeColor(portfolio.grade)}`}>
-                        {portfolio.grade}
-                      </span>
-                    </div>
-                  )} */}
 
                   {/* Bottom Info Overlay */}
-                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                    <h3 className="font-display font-bold text-lg line-clamp-1">{portfolio.title}</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <UserIcon className="w-3 h-3" />
-                      <span className="text-sm opacity-90">{portfolio.student?.name || "-"}</span>
-                      <span className="opacity-50">•</span>
-                      <span className="text-sm opacity-90">{portfolio.student?.className || "-"}</span>
+                  <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 text-white">
+                    <h3 className="font-display font-bold text-base sm:text-lg line-clamp-1">{portfolio.title}</h3>
+                    <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 sm:mt-1 flex-wrap">
+                      <UserIcon className="w-3 h-3 flex-shrink-0" />
+                      <span className="text-xs sm:text-sm opacity-90 truncate">{portfolio.student?.name || "-"}</span>
+                      <span className="opacity-50 flex-shrink-0">•</span>
+                      <span className="text-xs sm:text-sm opacity-90">{portfolio.student?.className || "-"}</span>
                     </div>
                   </div>
               </div>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Palette className="w-4 h-4 text-primary" />
-                  <span className="line-clamp-1">{portfolio.assignment?.title || "-"}</span>
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground min-w-0">
+                  <Palette className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary flex-shrink-0" />
+                  <span className="line-clamp-1 min-w-0">{portfolio.assignment?.title || "-"}</span>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {filteredPortfolios.map((portfolio) => (
             <Card 
               key={portfolio.id} 
-              className="card-playful group cursor-pointer"
+              className="card-playful group cursor-pointer touch-manipulation"
               onClick={() => setSelectedWork(portfolio)}
             >
-              <CardContent className="p-4">
-                <div className="flex gap-4">
-                  <div className="w-28 h-28 rounded-xl overflow-hidden flex-shrink-0 relative">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex gap-3 sm:gap-4 min-w-0">
+                  <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-lg sm:rounded-xl overflow-hidden flex-shrink-0 bg-muted">
                     <img
                       src={getPortfolioImageUrl(portfolio, 'thumbnail') || `https://picsum.photos/seed/${portfolio.title}/200/200`}
                       alt={portfolio.title || "Portfolio"}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                     />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="min-w-0">
-                      <h3 className="font-display font-bold text-lg truncate">{portfolio.title}</h3>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                        <UserIcon className="w-4 h-4" />
-                        <span>{portfolio.student?.name || "-"}</span>
-                        <span className="opacity-50">•</span>
-                        <span>{portfolio.student?.className || "-"}</span>
-                      </div>
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <h3 className="font-display font-bold text-base sm:text-lg truncate">{portfolio.title}</h3>
+                    <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 flex-wrap">
+                      <UserIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                      <span className="truncate">{portfolio.student?.name || "-"}</span>
+                      <span className="opacity-50 flex-shrink-0">•</span>
+                      <span>{portfolio.student?.className || "-"}</span>
                     </div>
-                    
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
-                      <Palette className="w-4 h-4 text-primary" />
-                      <span>{portfolio.assignment?.title || "-"}</span>
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mt-1.5 sm:mt-2 min-w-0">
+                      <Palette className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary flex-shrink-0" />
+                      <span className="line-clamp-1 truncate">{portfolio.assignment?.title || "-"}</span>
                     </div>
-                    
                   </div>
                 </div>
               </CardContent>
@@ -298,71 +285,76 @@ const Portfolio = () => {
         </div>
       )}
 
-      {/* Work Detail Dialog */}
+      {/* Work Detail Dialog - mobile friendly */}
       <Dialog open={!!selectedWork} onOpenChange={(open) => !open && setSelectedWork(null)}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="font-display">{selectedWork?.title}</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6">
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="font-display text-base sm:text-lg pr-8 break-words">
+              {selectedWork?.title}
+            </DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
               Tugas: {selectedWork?.assignment?.title || "-"}
             </DialogDescription>
           </DialogHeader>
           {selectedWork && (
-            <div className="space-y-4">
-              <div className="rounded-xl overflow-hidden bg-muted/30 flex items-center justify-center">
+            <div className="space-y-3 sm:space-y-4">
+              <div className="rounded-lg sm:rounded-xl overflow-hidden bg-muted/30 flex items-center justify-center -mx-1 sm:mx-0">
                 <img
                   src={getPortfolioImageUrl(selectedWork, 'full') || `https://picsum.photos/seed/${selectedWork.title}/800/600`}
                   alt={selectedWork.title || "Portfolio"}
-                  className="w-full h-auto max-h-[60vh] object-contain"
+                  className="w-full h-auto max-h-[50vh] sm:max-h-[60vh] object-contain"
                 />
               </div>
-              
+
               {/* Student Info */}
-              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
-                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl min-w-0">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
                   <UserIcon className="w-5 h-5 text-primary" />
                 </div>
-                <div>
-                  <p className="font-semibold">{selectedWork.student?.name || "-"}</p>
+                <div className="min-w-0">
+                  <p className="font-semibold truncate">{selectedWork.student?.name || "-"}</p>
                   <p className="text-sm text-muted-foreground">{selectedWork.student?.className || "-"}</p>
                 </div>
               </div>
-              
-              <div className="grid grid-cols-3 gap-4">
-                <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-xl">
-                  <Award className="w-5 h-5 text-primary" />
-                  <div>
+
+              {/* Info cards - stack on mobile, 3 cols on sm+ */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-xl min-w-0">
+                  <Award className="w-5 h-5 text-primary flex-shrink-0" />
+                  <div className="min-w-0">
                     <p className="text-xs text-muted-foreground">Nilai</p>
-                    <p className="font-bold">{selectedWork.grade || "-"}</p>
+                    <p className="font-bold truncate">{selectedWork.grade || "-"}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-xl">
-                  <Calendar className="w-5 h-5 text-secondary" />
-                  <div>
+                <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-xl min-w-0">
+                  <Calendar className="w-5 h-5 text-secondary flex-shrink-0" />
+                  <div className="min-w-0">
                     <p className="text-xs text-muted-foreground">Tanggal</p>
-                    <p className="font-semibold text-sm">{selectedWork.submittedAt ? new Date(selectedWork.submittedAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) : "-"}</p>
+                    <p className="font-semibold text-sm truncate">
+                      {selectedWork.submittedAt ? new Date(selectedWork.submittedAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) : "-"}
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-xl">
-                  <Tag className="w-5 h-5 text-accent" />
-                  <div>
+                <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-xl min-w-0">
+                  <Tag className="w-5 h-5 text-accent flex-shrink-0" />
+                  <div className="min-w-0">
                     <p className="text-xs text-muted-foreground">Tipe Media</p>
-                    <p className="font-semibold text-sm">{selectedWork.mediaType?.name || "-"}</p>
+                    <p className="font-semibold text-sm truncate">{selectedWork.mediaType?.name || "-"}</p>
                   </div>
                 </div>
               </div>
 
               {selectedWork.description && (
-                <div className="p-4 bg-muted/50 rounded-xl">
+                <div className="p-3 sm:p-4 bg-muted/50 rounded-xl min-w-0">
                   <p className="text-sm font-semibold mb-2">Deskripsi Karya:</p>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{selectedWork.description}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed break-words">{selectedWork.description}</p>
                 </div>
               )}
 
               {selectedWork.feedback && (
-                <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+                <div className="p-3 sm:p-4 bg-primary/5 rounded-xl border border-primary/10 min-w-0">
                   <p className="text-sm font-semibold mb-2">Feedback Guru:</p>
-                  <p className="text-sm text-muted-foreground">{selectedWork.feedback}</p>
+                  <p className="text-sm text-muted-foreground break-words">{selectedWork.feedback}</p>
                 </div>
               )}
             </div>
@@ -371,13 +363,13 @@ const Portfolio = () => {
       </Dialog>
 
       {/* Empty State */}
-      {filteredPortfolios.length === 0 && (
-        <div className="text-center py-16">
-          <div className="w-20 h-20 mx-auto rounded-3xl bg-muted flex items-center justify-center mb-4">
-            <Image className="w-10 h-10 text-muted-foreground" />
+      {filteredPortfolios.length === 0 && !loading && (
+        <div className="text-center py-12 sm:py-16 px-4">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-2xl sm:rounded-3xl bg-muted flex items-center justify-center mb-3 sm:mb-4">
+            <Image className="w-8 h-8 sm:w-10 sm:h-10 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-display font-bold mb-2">Belum Ada Karya</h3>
-          <p className="text-muted-foreground">
+          <h3 className="text-base sm:text-lg font-display font-bold mb-2">Belum Ada Karya</h3>
+          <p className="text-muted-foreground text-sm sm:text-base">
             Belum ada karya yang disetujui dan dinilai
           </p>
         </div>
