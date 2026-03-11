@@ -131,7 +131,7 @@ export const CertificateView: React.FC<CertificateViewProps> = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto p-0 border-none bg-transparent shadow-none">
+            <DialogContent className="max-w-5xl w-[95vw] sm:w-full max-h-[95vh] overflow-y-auto overflow-x-hidden p-0 border-none bg-transparent shadow-none">
                 <DialogHeader className="sr-only">
                     <DialogTitle>Sertifikat Karya</DialogTitle>
                     <DialogDescription>
@@ -139,7 +139,7 @@ export const CertificateView: React.FC<CertificateViewProps> = ({
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-6 p-4">
+                <div className="space-y-4 sm:space-y-6 p-2 sm:p-4">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-20 bg-white/80 backdrop-blur rounded-2xl">
                             <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
@@ -150,7 +150,7 @@ export const CertificateView: React.FC<CertificateViewProps> = ({
                     ) : (
                         <>
                             {certificateData && (
-                                <div className="scale-[0.9] sm:scale-100 origin-top">
+                                <div className="w-full min-w-0 overflow-x-auto overflow-y-auto">
                                     <Certificate data={certificateData} />
                                 </div>
                             )}

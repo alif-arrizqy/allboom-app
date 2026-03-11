@@ -204,9 +204,9 @@ export const CertificatePage: React.FC = () => {
                 </Button>
             </div>
 
-            {/* Certificate Container */}
+            {/* Certificate Container - padding on mobile to avoid edge overflow */}
             <div
-                className="relative w-full max-w-[11in] mx-auto"
+                className="relative w-full max-w-[11in] mx-auto px-2 sm:px-4 min-w-0"
                 ref={certificateRef}
             >
                 <Certificate data={certificateData} />

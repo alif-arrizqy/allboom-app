@@ -137,54 +137,75 @@ export const generateCertificatePDF = async (
     doc.setFont("helvetica", "normal");
     doc.text("DENGAN INI MENYATAKAN BAHWA", 240, topY, { align: "center" });
 
+    const leftColCenterX = 246; // center of left column (80 to 412)
+
     // Artist Name Label
     doc.setFontSize(7);
     doc.setTextColor(100, 116, 139); // slate500
     doc.setFont("helvetica", "bold");
-    doc.text("NAMA SENIMAN", 240, topY + 25, { align: "center" });
+    doc.text("NAMA SENIMAN", leftColCenterX, topY + 25, { align: "center" });
 
-    // Artist Name
-    doc.setFontSize(28);
+    // Artist Name - multi-line, dynamic font, max width 300pt
+    const nameMaxWidth = 300;
+    const nameLines = doc.splitTextToSize(
+        data.recipientName.toUpperCase(),
+        nameMaxWidth,
+    );
+    const nameFontSize = nameLines.length > 2 ? 18 : nameLines.length > 1 ? 22 : 28;
+    doc.setFontSize(nameFontSize);
     doc.setTextColor(15, 23, 42); // slate900
     doc.setFont("helvetica", "bold");
-    doc.text(data.recipientName.toUpperCase(), 240, topY + 50, {
-        align: "center",
-        maxWidth: 300,
+    const nameLineHeight = nameFontSize * 1.2;
+    nameLines.forEach((line: string, i: number) => {
+        doc.text(line, leftColCenterX, topY + 48 + i * nameLineHeight, {
+            align: "center",
+        });
     });
+    const nameBlockBottom = topY + 48 + nameLines.length * nameLineHeight;
 
     // Decorative palette icon (simplified as lines)
+    const decorY = nameBlockBottom + 12;
     doc.setDrawColor(251, 191, 36); // amber400
     doc.setLineWidth(1.5);
-    doc.line(190, topY + 65, 230, topY + 65);
+    doc.line(166, decorY, 206, decorY);
     doc.setDrawColor(251, 113, 133); // rose400
-    doc.line(250, topY + 65, 290, topY + 65);
+    doc.line(286, decorY, 326, decorY);
 
     // Artwork Title Label
     doc.setFontSize(7);
     doc.setTextColor(100, 116, 139); // slate500
     doc.setFont("helvetica", "bold");
-    doc.text("JUDUL KARYA", 240, topY + 90, { align: "center" });
+    doc.text("JUDUL KARYA", leftColCenterX, decorY + 22, { align: "center" });
 
-    // Artwork Title
-    doc.setFontSize(22);
+    // Artwork Title - multi-line, dynamic font
+    const titleMaxWidth = 300;
+    const titleText = `"${data.artworkTitle}"`;
+    const titleLines = doc.splitTextToSize(titleText, titleMaxWidth);
+    const titleFontSize =
+        titleLines.length > 3 ? 12 : titleLines.length > 2 ? 16 : titleLines.length > 1 ? 18 : 22;
+    doc.setFontSize(titleFontSize);
     doc.setTextColor(30, 41, 59); // slate800
     doc.setFont("helvetica", "bolditalic");
-    doc.text(`"${data.artworkTitle}"`, 240, topY + 110, {
-        align: "center",
-        maxWidth: 300,
+    const titleLineHeight = titleFontSize * 1.25;
+    titleLines.forEach((line: string, i: number) => {
+        doc.text(line, leftColCenterX, decorY + 42 + i * titleLineHeight, {
+            align: "center",
+        });
     });
+    const titleBlockBottom = decorY + 42 + titleLines.length * titleLineHeight;
 
     // Image (if exists)
     if (data.imageUrl) {
         try {
+            const imageLabelY = titleBlockBottom + 18;
             doc.setFontSize(7);
             doc.setTextColor(100, 116, 139); // slate500
             doc.setFont("helvetica", "bold");
-            doc.text("FOTO KARYA", 240, topY + 145, { align: "center" });
+            doc.text("FOTO KARYA", leftColCenterX, imageLabelY, { align: "center" });
 
             const imageData = await loadImageAsBase64(data.imageUrl);
             const frameX = leftX + 25;
-            const frameY = topY + 155;
+            const frameY = imageLabelY + 10;
             const frameW = 250;
             const frameH = 160;
 
@@ -274,7 +295,7 @@ export const generateCertificatePDF = async (
         6,
     );
 
-    // Description (if exists)
+    // Description (deskripsi karya siswa, if exists)
     if (data.description) {
         doc.setFontSize(8);
         doc.setTextColor(71, 85, 105); // slate600
@@ -285,7 +306,8 @@ export const generateCertificatePDF = async (
         doc.setTextColor(100, 116, 139); // slate500
         doc.setFont("helvetica", "normal");
         const descLines = doc.splitTextToSize(data.description, 270);
-        doc.text(descLines.slice(0, 2), rightX + 15, topY + 260); // Max 2 lines
+        const maxDescLines = 5;
+        doc.text(descLines.slice(0, maxDescLines), rightX + 15, topY + 260);
     }
 
     // === FOOTER ===
