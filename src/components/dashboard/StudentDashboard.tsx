@@ -136,13 +136,19 @@ const StudentDashboard = ({ user }: StudentDashboardProps) => {
                 dashboardData.recentWorks.map((work) => (
                   <div 
                     key={work.id}
-                    className="group relative rounded-2xl overflow-hidden bg-muted aspect-square cursor-pointer"
+                    className="group relative rounded-2xl overflow-hidden bg-muted aspect-square cursor-pointer flex items-center justify-center"
                   >
-                    <img 
-                      src={work.imageThumbnail || work.imageMedium || work.imageUrl || `https://picsum.photos/seed/${work.title}/300/300`}
-                      alt={work.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
+                    {work.imageThumbnail || work.imageMedium || work.imageUrl ? (
+                      <img 
+                        src={work.imageThumbnail || work.imageMedium || work.imageUrl}
+                        alt={work.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    ) : (
+                      <span className="text-xs text-muted-foreground text-center px-4">
+                        Tidak ada gambar
+                      </span>
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                       <div className="absolute bottom-0 left-0 right-0 p-4">
                         <p className="text-primary-foreground font-semibold">{work.title}</p>

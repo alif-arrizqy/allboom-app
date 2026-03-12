@@ -220,12 +220,18 @@ const Portfolio = () => {
               className="card-playful group overflow-hidden cursor-pointer touch-manipulation"
               onClick={() => setSelectedWork(portfolio)}
             >
-              <div className="relative aspect-square overflow-hidden">
-                  <img
-                    src={getPortfolioImageUrl(portfolio, 'thumbnail') || `https://picsum.photos/seed/${portfolio.title}/400/400`}
-                    alt={portfolio.title || "Portfolio"}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
+              <div className="relative aspect-square overflow-hidden bg-muted flex items-center justify-center">
+                  {getPortfolioImageUrl(portfolio, 'thumbnail') ? (
+                    <img
+                      src={getPortfolioImageUrl(portfolio, 'thumbnail')}
+                      alt={portfolio.title || "Portfolio"}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  ) : (
+                    <span className="text-xs sm:text-sm text-muted-foreground px-4 text-center">
+                      Tidak ada gambar
+                    </span>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/20 to-transparent" />
 
                   {/* Bottom Info Overlay */}
@@ -258,12 +264,18 @@ const Portfolio = () => {
             >
               <CardContent className="p-3 sm:p-4">
                 <div className="flex gap-3 sm:gap-4 min-w-0">
-                  <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-lg sm:rounded-xl overflow-hidden flex-shrink-0 bg-muted">
-                    <img
-                      src={getPortfolioImageUrl(portfolio, 'thumbnail') || `https://picsum.photos/seed/${portfolio.title}/200/200`}
-                      alt={portfolio.title || "Portfolio"}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
+                  <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-lg sm:rounded-xl overflow-hidden flex-shrink-0 bg-muted flex items-center justify-center">
+                    {getPortfolioImageUrl(portfolio, 'thumbnail') ? (
+                      <img
+                        src={getPortfolioImageUrl(portfolio, 'thumbnail')}
+                        alt={portfolio.title || "Portfolio"}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    ) : (
+                      <span className="text-[11px] sm:text-xs text-muted-foreground text-center px-2">
+                        Tidak ada gambar
+                      </span>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0 overflow-hidden">
                     <h3 className="font-display font-bold text-base sm:text-lg truncate">{portfolio.title}</h3>
@@ -299,11 +311,17 @@ const Portfolio = () => {
           {selectedWork && (
             <div className="space-y-3 sm:space-y-4">
               <div className="rounded-lg sm:rounded-xl overflow-hidden bg-muted/30 flex items-center justify-center -mx-1 sm:mx-0">
-                <img
-                  src={getPortfolioImageUrl(selectedWork, 'full') || `https://picsum.photos/seed/${selectedWork.title}/800/600`}
-                  alt={selectedWork.title || "Portfolio"}
-                  className="w-full h-auto max-h-[50vh] sm:max-h-[60vh] object-contain"
-                />
+                {getPortfolioImageUrl(selectedWork, 'full') ? (
+                  <img
+                    src={getPortfolioImageUrl(selectedWork, 'full')}
+                    alt={selectedWork.title || "Portfolio"}
+                    className="w-full h-auto max-h-[50vh] sm:max-h-[60vh] object-contain"
+                  />
+                ) : (
+                  <span className="text-sm text-muted-foreground px-4 py-8 text-center">
+                    Tidak ada gambar untuk karya ini
+                  </span>
+                )}
               </div>
 
               {/* Student Info */}
