@@ -13,10 +13,15 @@ export interface CertificateData {
     imageUrl?: string;
 }
 
-// Helper: format text ke Title Case (setiap kata kapital di awal,
-// dan sisanya lowercase) untuk merapikan input yang ALL CAPS / acak.
-const toTitleCase = (value: string): string => {
+// Helper: format text ke Title Case HANYA jika seluruh huruf alfabet-nya ALL CAPS.
+// Tujuannya merapikan input yang seperti "HUSEIN IBRAHIM SHAH",
+// tapi tetap menjaga case asli jika sudah rapi atau mengandung kombinasi huruf/angka (misal: "Husein-17-10C").
+const toTitleCaseIfAllCaps = (value: string): string => {
     if (!value) return "";
+    const hasLetter = /[A-Z]/i.test(value);
+    const allAlphaCaps = hasLetter && value === value.toUpperCase();
+    if (!allAlphaCaps) return value; // biarkan apa adanya
+
     return value
         .trim()
         .split(/\s+/)
@@ -26,6 +31,23 @@ const toTitleCase = (value: string): string => {
             return lower.charAt(0).toUpperCase() + lower.slice(1);
         })
         .join(" ");
+};
+
+// Helper: hitung dimensi gambar agar tetap menjaga aspect ratio
+// dan muat di dalam bounding box (maxWidth x maxHeight).
+const getFittedImageSize = (
+    img: HTMLImageElement,
+    maxWidth: number,
+    maxHeight: number,
+): { width: number; height: number } => {
+    const { width: w, height: h } = img;
+    if (!w || !h) return { width: maxWidth, height: maxHeight };
+
+    const ratio = Math.min(maxWidth / w, maxHeight / h);
+    return {
+        width: w * ratio,
+        height: h * ratio,
+    };
 };
 
 // Helper to load image as base64
@@ -160,15 +182,15 @@ export const generateCertificatePDF = async (
     doc.setFont("helvetica", "bold");
     doc.text("NAMA SENIMAN", leftColCenterX, topY + 25, { align: "center" });
 
-    // Artist Name - multi-line, fixed font size, max width 300pt
-    const nameMaxWidth = 300;
-    const formattedName = toTitleCase(data.recipientName);
+    // Artist Name - multi-line, fixed but lebih kecil & aman, max width 280pt
+    const nameMaxWidth = 280;
+    const formattedName = toTitleCaseIfAllCaps(data.recipientName);
     const nameLines = doc.splitTextToSize(formattedName, nameMaxWidth);
-    const nameFontSize = 24; // fixed size untuk konsistensi
+    const nameFontSize = 20; // sedikit lebih kecil agar tidak bertabrakan
     doc.setFontSize(nameFontSize);
     doc.setTextColor(15, 23, 42); // slate900
     doc.setFont("helvetica", "bold");
-    const nameLineHeight = nameFontSize * 1.2;
+    const nameLineHeight = nameFontSize * 1.25;
     nameLines.forEach((line: string, i: number) => {
         doc.text(line, leftColCenterX, topY + 48 + i * nameLineHeight, {
             align: "center",
@@ -190,12 +212,28 @@ export const generateCertificatePDF = async (
     doc.setFont("helvetica", "bold");
     doc.text("JUDUL KARYA", leftColCenterX, decorY + 22, { align: "center" });
 
-    // Artwork Title - multi-line, fixed font size
-    const titleMaxWidth = 300;
-    const formattedTitle = toTitleCase(data.artworkTitle);
-    const titleText = `"${formattedTitle}"`;
-    const titleLines = doc.splitTextToSize(titleText, titleMaxWidth);
-    const titleFontSize = 18; // fixed size untuk judul
+    // Artwork Title - multi-line, fixed font size yang lebih kecil
+    const titleMaxWidth = 280;
+    const formattedTitle = toTitleCaseIfAllCaps(data.artworkTitle);
+
+    // Aturan khusus:
+    // - Jika judul punya lebih dari 3 kata, paksa pecah menjadi 2 baris:
+    //   baris 1: semua kata kecuali kata terakhir
+    //   baris 2: kata terakhir saja
+    //   Contoh: "Karya Sketsa Nirmana Husein Ibrahim Shah"
+    //   -> "Karya Sketsa Nirmana Husein Ibrahim"
+    //      "Shah"
+    let titleLines: string[];
+    const words = formattedTitle.trim().split(/\s+/);
+    if (words.length > 3) {
+        const firstLine = words.slice(0, words.length - 1).join(" ");
+        const lastWord = words[words.length - 1];
+        titleLines = [`"${firstLine}`, `${lastWord}"`];
+    } else {
+        const titleText = `"${formattedTitle}"`;
+        titleLines = doc.splitTextToSize(titleText, titleMaxWidth);
+    }
+    const titleFontSize = 16; // lebih kecil agar tetap rapi untuk judul panjang
     doc.setFontSize(titleFontSize);
     doc.setTextColor(30, 41, 59); // slate800
     doc.setFont("helvetica", "bolditalic");
@@ -227,14 +265,25 @@ export const generateCertificatePDF = async (
             doc.setLineWidth(2);
             doc.rect(frameX, frameY, frameW, frameH);
 
-            // Image
+            // Hitung dimensi gambar dengan aspect ratio asli di dalam frame
+            const imgEl = new Image();
+            imgEl.src = imageData;
+            await new Promise((resolve, reject) => {
+                imgEl.onload = () => resolve(null);
+                imgEl.onerror = reject;
+            });
+            const fitted = getFittedImageSize(imgEl, frameW - 10, frameH - 10);
+            const imgX = frameX + (frameW - fitted.width) / 2;
+            const imgY = frameY + (frameH - fitted.height) / 2;
+
+            // Image (tidak di-crop, hanya di-scale mempertahankan proporsi)
             doc.addImage(
                 imageData,
                 "JPEG",
-                frameX + 5,
-                frameY + 5,
-                frameW - 10,
-                frameH - 10,
+                imgX,
+                imgY,
+                fitted.width,
+                fitted.height,
                 undefined,
                 "FAST",
             );
