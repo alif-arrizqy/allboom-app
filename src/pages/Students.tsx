@@ -23,7 +23,10 @@ import {
   Trash2,
   FileSpreadsheet,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  KeyRound,
+  EyeOff,
+  Loader2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { userService } from "@/services/user.service";
@@ -65,6 +68,11 @@ const Students = () => {
     password: "",
     classId: ""
   });
+
+  // Reset password state
+  const [resetPasswordData, setResetPasswordData] = useState({ newPassword: "", confirmPassword: "" });
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   const isTeacher = user.role === "teacher" || user.role === "TEACHER";
 
@@ -326,7 +334,45 @@ const Students = () => {
       password: "", // Password tidak ditampilkan untuk edit
       classId: student.classId || ""
     });
+    setResetPasswordData({ newPassword: "", confirmPassword: "" });
     setIsEditDialogOpen(true);
+  };
+
+  const handleResetStudentPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedStudent) return;
+
+    if (resetPasswordData.newPassword !== resetPasswordData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Password baru dan konfirmasi tidak cocok",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsResettingPassword(true);
+      await userService.resetStudentPassword(selectedStudent.id, resetPasswordData.newPassword);
+      toast({
+        title: "Password Direset!",
+        description: `Password ${selectedStudent.name} berhasil direset`,
+      });
+      setResetPasswordData({ newPassword: "", confirmPassword: "" });
+    } catch (error) {
+      const errorMessage = error instanceof Error
+        ? error.message
+        : (error as { response?: { data?: { message?: string; error?: string } } })?.response?.data?.message
+        || (error as { response?: { data?: { error?: string } } })?.response?.data?.error
+        || "Gagal mereset password";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsResettingPassword(false);
+    }
   };
 
   const openDeleteDialog = (student: User) => {
@@ -842,6 +888,72 @@ const Students = () => {
               </Button>
             </div>
           </form>
+
+          {/* Separator */}
+          <div className="border-t border-border mt-4 pt-4">
+            <button
+              type="button"
+              className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-full"
+              onClick={() => setShowResetPassword(!showResetPassword)}
+            >
+              <KeyRound className="w-4 h-4" />
+              <span>Reset Password Siswa</span>
+              <span className="ml-auto text-xs">{showResetPassword ? "▲ Sembunyikan" : "▼ Tampilkan"}</span>
+            </button>
+
+            {showResetPassword && (
+              <form onSubmit={handleResetStudentPassword} className="space-y-3 mt-3">
+                <div className="space-y-2">
+                  <Label className="text-sm">Password Baru</Label>
+                  <div className="relative">
+                    <Input
+                      type={showResetPassword ? "text" : "password"}
+                      value={resetPasswordData.newPassword}
+                      onChange={(e) => setResetPasswordData({ ...resetPasswordData, newPassword: e.target.value })}
+                      className="rounded-xl pr-10"
+                      placeholder="Minimal 6 karakter"
+                      required
+                      minLength={6}
+                      disabled={isResettingPassword}
+                    />
+                    <EyeOff className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm">Konfirmasi Password Baru</Label>
+                  <Input
+                    type="password"
+                    value={resetPasswordData.confirmPassword}
+                    onChange={(e) => setResetPasswordData({ ...resetPasswordData, confirmPassword: e.target.value })}
+                    className={`rounded-xl ${
+                      resetPasswordData.confirmPassword && resetPasswordData.newPassword !== resetPasswordData.confirmPassword
+                        ? "border-destructive"
+                        : ""
+                    }`}
+                    placeholder="Ulangi password baru"
+                    required
+                    disabled={isResettingPassword}
+                  />
+                  {resetPasswordData.confirmPassword && resetPasswordData.newPassword !== resetPasswordData.confirmPassword && (
+                    <p className="text-xs text-destructive">Password tidak cocok</p>
+                  )}
+                </div>
+                <Button
+                  type="submit"
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                  disabled={isResettingPassword || !resetPasswordData.newPassword || resetPasswordData.newPassword !== resetPasswordData.confirmPassword}
+                >
+                  {isResettingPassword ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Mereset...</>
+                  ) : (
+                    <><KeyRound className="w-4 h-4 mr-2" /> Reset Password</>
+                  )}
+                </Button>
+              </form>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 

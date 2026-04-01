@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Mail, User as UserIcon, Phone, MapPin, Calendar, Edit, Save, X, Loader2 } from "lucide-react";
+import { Camera, Mail, User as UserIcon, Phone, MapPin, Calendar, Edit, Save, X, Loader2, Lock, Eye, EyeOff, KeyRound } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { authService } from "@/services/auth.service";
 import { userService } from "@/services/user.service";
@@ -68,6 +68,17 @@ const Profile = () => {
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  // Change password state
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Fetch user data
   useEffect(() => {
@@ -204,6 +215,47 @@ const Profile = () => {
       setAvatarPreview(user.avatar);
     }
     setIsEditing(false);
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Password baru dan konfirmasi password tidak cocok",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsChangingPassword(true);
+      await userService.changePassword(
+        user.id,
+        passwordForm.oldPassword,
+        passwordForm.newPassword,
+        passwordForm.confirmPassword,
+      );
+      toast({
+        title: "Password Diubah!",
+        description: "Password berhasil diubah. Silakan login ulang jika diperlukan.",
+      });
+      setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (error: unknown) {
+      const errorMessage = error && typeof error === 'object' && 'response' in error
+        ? (error as { response?: { data?: { message?: string; error?: string } } })?.response?.data?.message
+          || (error as { response?: { data?: { error?: string } } })?.response?.data?.error
+        : undefined;
+      toast({
+        title: "Gagal mengubah password",
+        description: errorMessage || "Terjadi kesalahan",
+        variant: "destructive",
+      });
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   if (isLoading) {
@@ -456,6 +508,124 @@ const Profile = () => {
               )}
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Change Password Card */}
+      <Card className="card-playful">
+        <CardHeader>
+          <CardTitle className="font-display flex items-center gap-2">
+            <KeyRound className="w-5 h-5 text-primary" />
+            Ubah Password
+          </CardTitle>
+          <CardDescription>Ganti password akun kamu</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
+            {/* Old Password */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Lock className="w-4 h-4 text-muted-foreground" />
+                Password Lama
+              </Label>
+              <div className="relative">
+                <Input
+                  id="old-password"
+                  type={showOldPassword ? "text" : "password"}
+                  value={passwordForm.oldPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, oldPassword: e.target.value })}
+                  className="rounded-xl pr-10"
+                  placeholder="Masukkan password lama"
+                  disabled={isChangingPassword}
+                  required
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowOldPassword(!showOldPassword)}
+                  tabIndex={-1}
+                >
+                  {showOldPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* New Password */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Lock className="w-4 h-4 text-muted-foreground" />
+                Password Baru
+              </Label>
+              <div className="relative">
+                <Input
+                  id="new-password"
+                  type={showNewPassword ? "text" : "password"}
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                  className="rounded-xl pr-10"
+                  placeholder="Minimal 6 karakter"
+                  disabled={isChangingPassword}
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  tabIndex={-1}
+                >
+                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Confirm Password */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Lock className="w-4 h-4 text-muted-foreground" />
+                Konfirmasi Password Baru
+              </Label>
+              <div className="relative">
+                <Input
+                  id="confirm-password"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                  className={`rounded-xl pr-10 ${
+                    passwordForm.confirmPassword && passwordForm.newPassword !== passwordForm.confirmPassword
+                      ? "border-destructive focus-visible:ring-destructive"
+                      : ""
+                  }`}
+                  placeholder="Ulangi password baru"
+                  disabled={isChangingPassword}
+                  required
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {passwordForm.confirmPassword && passwordForm.newPassword !== passwordForm.confirmPassword && (
+                <p className="text-sm text-destructive">Password tidak cocok</p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              variant="gradient"
+              disabled={isChangingPassword || !passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.confirmPassword}
+            >
+              {isChangingPassword ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Menyimpan...</>
+              ) : (
+                <><KeyRound className="w-4 h-4 mr-2" /> Ubah Password</>
+              )}
+            </Button>
+          </form>
         </CardContent>
       </Card>
     </div>

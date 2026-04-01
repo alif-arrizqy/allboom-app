@@ -150,5 +150,29 @@ export const userService = {
     });
     return response.data;
   },
+
+  /**
+   * Reset password siswa — hanya guru yang bisa
+   * Tidak memerlukan password lama siswa
+   */
+  async resetStudentPassword(studentId: string, newPassword: string): Promise<ApiResponse<null>> {
+    const response = await apiClient.put<ApiResponse<null>>(`/users/${studentId}/reset-password`, {
+      newPassword,
+    });
+    return response.data;
+  },
+
+  /**
+   * Ganti password sendiri — guru atau siswa
+   * Memerlukan verifikasi password lama
+   */
+  async changePassword(userId: string, oldPassword: string, newPassword: string, confirmPassword: string): Promise<ApiResponse<null>> {
+    const response = await apiClient.put<ApiResponse<null>>(`/users/${userId}/change-password`, {
+      oldPassword,
+      newPassword,
+      confirmPassword,
+    });
+    return response.data;
+  },
 };
 
