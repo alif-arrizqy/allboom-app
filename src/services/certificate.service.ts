@@ -6,6 +6,9 @@ import type { ApiResponse } from '@/config/api';
 
 export interface Certificate {
   id: string;
+  // `token` kadang dikirim juga saat membuat sertifikat (dipakai untuk membuka halaman sertifikat).
+  // dibuat optional supaya tetap kompatibel jika backend hanya mengembalikan tanpa token.
+  token?: string;
   submissionId: string;
   studentId: string;
   studentName: string;
