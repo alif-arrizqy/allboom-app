@@ -165,6 +165,48 @@ const getImageHistoryUrl = (
     return imageUrl;
 };
 
+// Extract a readable API error message (Fastify ResponseFormatter.error -> { message, errors }).
+const getApiErrorMessage = (error: unknown, fallback: string): string => {
+    type ApiErrorData = {
+        message?: unknown;
+        errors?: Record<string, unknown>;
+    };
+
+    const err = error as {
+        response?: { data?: ApiErrorData };
+        message?: unknown;
+    };
+
+    const data = err.response?.data;
+
+    if (data) {
+        if (typeof data.message === "string" && data.message.trim()) {
+            return data.message;
+        }
+
+        // Backend might return `errors` as Record<string, string[]>
+        if (data.errors && typeof data.errors === "object") {
+            const firstKey = Object.keys(data.errors)[0];
+            const firstVal = data.errors[firstKey];
+            if (Array.isArray(firstVal) && firstVal.length > 0) {
+                const firstString = firstVal[0];
+                if (typeof firstString === "string" && firstString.trim()) {
+                    return firstString;
+                }
+            }
+            if (typeof firstVal === "string" && firstVal.trim()) {
+                return firstVal;
+            }
+        }
+    }
+
+    if (err?.message && typeof err.message === "string" && err.message.trim()) {
+        return err.message;
+    }
+
+    return fallback;
+};
+
 const Assignments = () => {
     const { user } = useOutletContext<{ user: FrontendUser }>();
     const { toast } = useToast();
@@ -632,7 +674,8 @@ const Assignments = () => {
                 materiType: resolvedMateriType,
                 deadline: new Date(editAssignmentData.deadline).toISOString(),
                 classIds: editAssignmentData.classIds,
-                status: editAssignmentData.status,
+                status: (editAssignmentData.status || "DRAFT") as
+                    CreateAssignmentRequest["status"],
             };
 
             const response = await assignmentService.createAssignment(data);
@@ -714,10 +757,7 @@ const Assignments = () => {
                 fetchAssignments();
             }
         } catch (error) {
-            const errorMessage =
-                error instanceof Error
-                    ? error.message
-                    : "Gagal mengumpulkan tugas";
+            const errorMessage = getApiErrorMessage(error, "Gagal mengumpulkan tugas");
             toast({
                 title: "Error",
                 description: errorMessage,
@@ -927,7 +967,8 @@ const Assignments = () => {
                     editAssignmentData.classIds.length > 0
                         ? editAssignmentData.classIds
                         : undefined,
-                status: editAssignmentData.status,
+                status: (editAssignmentData.status || "DRAFT") as
+                    UpdateAssignmentRequest["status"],
             };
 
             const response = await assignmentService.updateAssignment(
@@ -1247,10 +1288,7 @@ const Assignments = () => {
                 fetchAssignments();
             }
         } catch (error) {
-            const errorMessage =
-                error instanceof Error
-                    ? error.message
-                    : "Gagal memperbarui karya";
+            const errorMessage = getApiErrorMessage(error, "Gagal memperbarui karya");
             toast({
                 title: "Error",
                 description: errorMessage,
@@ -4040,7 +4078,7 @@ const Assignments = () => {
                                             Klik untuk pilih file gambar
                                         </p>
                                         <p className="text-xs text-muted-foreground mt-1">
-                                            Format: JPG, PNG, WEBP (Max 5MB)
+                                            Format: JPG, PNG, WEBP, HEIC/HEIF (Max 5MB)
                                         </p>
                                     </>
                                 )}
