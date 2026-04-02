@@ -4040,7 +4040,7 @@ const Assignments = () => {
                                             Klik untuk pilih file gambar
                                         </p>
                                         <p className="text-xs text-muted-foreground mt-1">
-                                            Format: JPG, PNG, WEBP (Max 10MB)
+                                            Format: JPG, PNG, WEBP (Max 5MB)
                                         </p>
                                     </>
                                 )}
