@@ -90,6 +90,15 @@ export const userService = {
           formData.append('classIds[]', classId);
         });
       }
+      if (data.nis !== undefined) {
+        formData.append('nis', data.nis);
+      }
+      if (data.nip !== undefined) {
+        formData.append('nip', data.nip);
+      }
+      if (data.classId) {
+        formData.append('classId', data.classId);
+      }
 
       const response = await apiClient.put<ApiResponse<{ user: User }>>(`/users/${id}`, formData, {
         headers: {

@@ -13,6 +13,7 @@ import { authService } from "@/services/auth.service";
 import { userService } from "@/services/user.service";
 import { dashboardService } from "@/services/dashboard.service";
 import type { UpdateUserRequest, User } from "@/types/api";
+import { getApiErrorMessage } from "@/lib/api-error";
 
 const compressImage = (file: File): Promise<File> => {
   return new Promise((resolve) => {
@@ -65,6 +66,8 @@ const Profile = () => {
     address: "",
     bio: "",
     birthdate: "",
+    nis: "",
+    nip: "",
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -95,6 +98,8 @@ const Profile = () => {
           address: userData.address || "",
           bio: userData.bio || "",
           birthdate: userData.birthdate ? userData.birthdate.split("T")[0] : "",
+          nis: userData.nis || "",
+          nip: userData.nip || "",
         });
         if (userData.avatar) {
           setAvatarPreview(userData.avatar);
@@ -125,12 +130,9 @@ const Profile = () => {
         }
       } catch (error: unknown) {
         console.error("Error fetching user data:", error);
-        const errorMessage = error && typeof error === 'object' && 'response' in error
-          ? (error as { response?: { data?: { message?: string } } })?.response?.data?.message
-          : undefined;
         toast({
           title: "Error",
-          description: errorMessage || "Gagal memuat data profile",
+          description: getApiErrorMessage(error, "Gagal memuat data profile"),
           variant: "destructive",
         });
       } finally {
@@ -159,6 +161,23 @@ const Profile = () => {
       setIsSaving(true);
       if (!user) return;
 
+      if (user.role === "STUDENT" && !formData.nis.trim()) {
+        toast({
+          title: "Data belum lengkap",
+          description: "NIS wajib diisi",
+          variant: "destructive",
+        });
+        return;
+      }
+      if ((user.role === "TEACHER" || user.role === "ADMIN") && !formData.nip.trim()) {
+        toast({
+          title: "Data belum lengkap",
+          description: "NIP wajib diisi",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const updateData: UpdateUserRequest = {
         name: formData.name,
         phone: formData.phone || undefined,
@@ -166,6 +185,13 @@ const Profile = () => {
         bio: formData.bio || undefined,
         birthdate: formData.birthdate || undefined,
       };
+
+      if (user.role === "STUDENT") {
+        updateData.nis = formData.nis.trim();
+      }
+      if (user.role === "TEACHER" || user.role === "ADMIN") {
+        updateData.nip = formData.nip.trim();
+      }
 
       if (avatarFile) {
         updateData.avatar = avatarFile;
@@ -188,12 +214,9 @@ const Profile = () => {
       });
     } catch (error: unknown) {
       console.error("Error updating profile:", error);
-      const errorMessage = error && typeof error === 'object' && 'response' in error
-        ? (error as { response?: { data?: { message?: string } } })?.response?.data?.message
-        : undefined;
       toast({
         title: "Error",
-        description: errorMessage || "Gagal menyimpan perubahan",
+        description: getApiErrorMessage(error, "Gagal menyimpan perubahan"),
         variant: "destructive",
       });
     } finally {
@@ -210,6 +233,8 @@ const Profile = () => {
         address: user.address || "",
         bio: user.bio || "",
         birthdate: user.birthdate ? user.birthdate.split("T")[0] : "",
+        nis: user.nis || "",
+        nip: user.nip || "",
       });
       setAvatarFile(null);
       setAvatarPreview(user.avatar);
@@ -244,13 +269,9 @@ const Profile = () => {
       });
       setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
     } catch (error: unknown) {
-      const errorMessage = error && typeof error === 'object' && 'response' in error
-        ? (error as { response?: { data?: { message?: string; error?: string } } })?.response?.data?.message
-          || (error as { response?: { data?: { error?: string } } })?.response?.data?.error
-        : undefined;
       toast({
         title: "Gagal mengubah password",
-        description: errorMessage || "Terjadi kesalahan",
+        description: getApiErrorMessage(error, "Terjadi kesalahan"),
         variant: "destructive",
       });
     } finally {
@@ -423,6 +444,48 @@ const Profile = () => {
                 <p className="text-foreground font-medium py-2">{formData.email || "-"}</p>
               )}
             </div>
+
+            {/* NIS (siswa) / NIP (guru) */}
+            {user.role === "STUDENT" && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <UserIcon className="w-4 h-4 text-muted-foreground" />
+                  NIS
+                </Label>
+                {isEditing ? (
+                  <Input
+                    value={formData.nis}
+                    onChange={(e) => setFormData({ ...formData, nis: e.target.value })}
+                    className="rounded-xl"
+                    placeholder="Nomor Induk Siswa"
+                    disabled={isSaving}
+                    autoComplete="off"
+                  />
+                ) : (
+                  <p className="text-foreground font-medium py-2">{formData.nis || "-"}</p>
+                )}
+              </div>
+            )}
+            {(user.role === "TEACHER" || user.role === "ADMIN") && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <UserIcon className="w-4 h-4 text-muted-foreground" />
+                  NIP
+                </Label>
+                {isEditing ? (
+                  <Input
+                    value={formData.nip}
+                    onChange={(e) => setFormData({ ...formData, nip: e.target.value })}
+                    className="rounded-xl"
+                    placeholder="Nomor Induk Pegawai"
+                    disabled={isSaving}
+                    autoComplete="off"
+                  />
+                ) : (
+                  <p className="text-foreground font-medium py-2">{formData.nip || "-"}</p>
+                )}
+              </div>
+            )}
 
             {/* Phone */}
             <div className="space-y-2">

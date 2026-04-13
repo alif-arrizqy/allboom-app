@@ -260,6 +260,12 @@ export interface UpdateUserRequest {
     bio?: string;
     birthdate?: string;
     avatar?: File;
+    /** Siswa — ubah NIS sendiri (dibatasi juga di backend) */
+    nis?: string;
+    /** Guru/staff — ubah NIP sendiri */
+    nip?: string;
+    classId?: string;
+    classIds?: string[];
 }
 
 // Response Types

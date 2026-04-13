@@ -9,6 +9,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Search, 
   Users, 
@@ -27,6 +29,7 @@ import {
   KeyRound,
   EyeOff,
   Loader2,
+  ListChecks,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { userService } from "@/services/user.service";
@@ -35,6 +38,16 @@ import { submissionService } from "@/services/submission.service";
 import { FrontendUser } from "@/layouts/DashboardLayout";
 import type { User } from "@/types/api";
 import type { Class } from "@/types/api";
+import { getApiErrorMessage } from "@/lib/api-error";
+
+type BulkEditRow = {
+  id: string;
+  name: string;
+  phone: string;
+  nis: string;
+  classId: string;
+  email: string;
+};
 
 const Students = () => {
   const { user } = useOutletContext<{ user: FrontendUser }>();
@@ -74,7 +87,15 @@ const Students = () => {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
 
+  const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
+  const [isBulkEditOpen, setIsBulkEditOpen] = useState(false);
+  const [bulkRows, setBulkRows] = useState<BulkEditRow[]>([]);
+  const [isBulkSaving, setIsBulkSaving] = useState(false);
+  const [bulkSaveErrors, setBulkSaveErrors] = useState<Record<string, string>>({});
+
   const isTeacher = user.role === "teacher" || user.role === "TEACHER";
+  const canManageStudents =
+    isTeacher || user.role === "ADMIN" || user.role === "admin";
 
   // Fetch students and classes
   const fetchStudents = useCallback(async () => {
@@ -119,12 +140,9 @@ const Students = () => {
         }
       }
     } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : (error as { response?: { data?: { error?: string } } })?.response?.data?.error || "Gagal memuat data siswa";
       toast({
         title: "Error",
-        description: errorMessage,
+        description: getApiErrorMessage(error, "Gagal memuat data siswa"),
         variant: "destructive",
       });
     } finally {
@@ -211,6 +229,126 @@ const Students = () => {
     setCurrentPage(1);
   }, [searchQuery, selectedClass]);
 
+  const toggleStudentSelect = (id: string) => {
+    setSelectedStudentIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAllStudentsOnCurrentPage = () => {
+    setSelectedStudentIds(new Set(paginatedStudents.map((s) => s.id)));
+  };
+
+  const toggleSelectAllOnCurrentPage = () => {
+    if (allOnPageSelected) {
+      setSelectedStudentIds((prev) => {
+        const next = new Set(prev);
+        paginatedStudents.forEach((s) => next.delete(s.id));
+        return next;
+      });
+    } else {
+      selectAllStudentsOnCurrentPage();
+    }
+  };
+
+  const clearStudentSelection = () => {
+    setSelectedStudentIds(new Set());
+  };
+
+  const openBulkEditDialog = () => {
+    if (selectedStudentIds.size === 0) return;
+    const rows: BulkEditRow[] = [];
+    selectedStudentIds.forEach((id) => {
+      const s = students.find((st) => st.id === id);
+      if (s) {
+        rows.push({
+          id: s.id,
+          name: s.name || "",
+          phone: s.phone || "",
+          nis: s.nis || "",
+          classId: s.classId || "",
+          email: s.email || "",
+        });
+      }
+    });
+    setBulkRows(rows);
+    setBulkSaveErrors({});
+    setIsBulkEditOpen(true);
+  };
+
+  const updateBulkRow = (id: string, patch: Partial<Omit<BulkEditRow, "id" | "email">>) => {
+    setBulkRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+    setBulkSaveErrors((prev) => {
+      if (!prev[id]) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  };
+
+  const handleBulkSave = async () => {
+    for (const row of bulkRows) {
+      if (!row.name.trim() || !row.nis.trim() || !row.classId) {
+        toast({
+          title: "Data belum lengkap",
+          description: "Setiap baris wajib punya Nama, NIS, dan Kelas.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    setIsBulkSaving(true);
+    setBulkSaveErrors({});
+    const errors: Record<string, string> = {};
+    let ok = 0;
+
+    for (const row of bulkRows) {
+      try {
+        const response = await userService.updateUser(row.id, {
+          name: row.name.trim(),
+          phone: row.phone.trim() || undefined,
+          classId: row.classId,
+          nis: row.nis.trim(),
+        });
+        if (response.success) ok++;
+        else errors[row.id] = response.message || "Gagal menyimpan";
+      } catch (error) {
+        errors[row.id] = getApiErrorMessage(error);
+      }
+    }
+
+    setIsBulkSaving(false);
+    setBulkSaveErrors(errors);
+
+    if (Object.keys(errors).length === 0) {
+      toast({
+        title: "Berhasil",
+        description: `${ok} siswa berhasil diperbarui.`,
+      });
+      setIsBulkEditOpen(false);
+      clearStudentSelection();
+      fetchStudents();
+    } else {
+      toast({
+        title: ok > 0 ? "Sebagian gagal" : "Gagal menyimpan",
+        description:
+          ok > 0
+            ? `${ok} berhasil, ${Object.keys(errors).length} baris gagal. Perbaiki yang bertanda merah lalu simpan lagi.`
+            : "Tidak ada baris yang tersimpan. Periksa pesan di tabel.",
+        variant: "destructive",
+      });
+      if (ok > 0) fetchStudents();
+    }
+  };
+
+  const allOnPageSelected =
+    paginatedStudents.length > 0 &&
+    paginatedStudents.every((s) => selectedStudentIds.has(s.id));
+
   const getScoreColor = (score: number) => {
     if (score >= 90) return "text-green bg-green/10";
     if (score >= 80) return "text-secondary bg-secondary/10";
@@ -256,14 +394,9 @@ const Students = () => {
         });
       }
     } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : (error as { response?: { data?: { error?: string; message?: string } } })?.response?.data?.error 
-        || (error as { response?: { data?: { message?: string } } })?.response?.data?.message
-        || "Gagal menambahkan siswa";
       toast({
         title: "Error",
-        description: errorMessage,
+        description: getApiErrorMessage(error, "Gagal menambahkan siswa"),
         variant: "destructive",
       });
     }
@@ -276,7 +409,8 @@ const Students = () => {
       const response = await userService.updateUser(selectedStudent.id, {
         name: formData.name,
         phone: formData.phone,
-        classId: formData.classId, // Allow updating class for student
+        classId: formData.classId,
+        nis: formData.nis.trim(),
       });
       if (response.success) {
         setIsEditDialogOpen(false);
@@ -288,12 +422,9 @@ const Students = () => {
         fetchStudents(); // Refresh with correct filter (teacher's classes only if applicable)
       }
     } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : (error as { response?: { data?: { error?: string } } })?.response?.data?.error || "Gagal memperbarui data siswa";
       toast({
         title: "Error",
-        description: errorMessage,
+        description: getApiErrorMessage(error, "Gagal memperbarui data siswa"),
         variant: "destructive",
       });
     }
@@ -313,12 +444,9 @@ const Students = () => {
         });
       }
     } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : (error as { response?: { data?: { error?: string } } })?.response?.data?.error || "Gagal menghapus siswa";
       toast({
         title: "Error",
-        description: errorMessage,
+        description: getApiErrorMessage(error, "Gagal menghapus siswa"),
         variant: "destructive",
       });
     }
@@ -360,14 +488,9 @@ const Students = () => {
       });
       setResetPasswordData({ newPassword: "", confirmPassword: "" });
     } catch (error) {
-      const errorMessage = error instanceof Error
-        ? error.message
-        : (error as { response?: { data?: { message?: string; error?: string } } })?.response?.data?.message
-        || (error as { response?: { data?: { error?: string } } })?.response?.data?.error
-        || "Gagal mereset password";
       toast({
         title: "Error",
-        description: errorMessage,
+        description: getApiErrorMessage(error, "Gagal mereset password"),
         variant: "destructive",
       });
     } finally {
@@ -418,12 +541,9 @@ const Students = () => {
         setImportFile(null);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : (error as { response?: { data?: { error?: string } } })?.response?.data?.error || "Gagal mengimpor file Excel";
       toast({
         title: "Error",
-        description: errorMessage,
+        description: getApiErrorMessage(error, "Gagal mengimpor file Excel"),
         variant: "destructive",
       });
     }
@@ -713,6 +833,52 @@ const Students = () => {
               <span>{filteredStudents.length} Siswa</span>
             </div>
           </div>
+
+          {canManageStudents && !loading && filteredStudents.length > 0 && (
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 pt-4 mt-4 border-t border-border">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl"
+                  onClick={toggleSelectAllOnCurrentPage}
+                  disabled={paginatedStudents.length === 0}
+                >
+                  {allOnPageSelected ? "Batal pilih halaman ini" : "Pilih semua di halaman ini"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-xl"
+                  onClick={clearStudentSelection}
+                  disabled={selectedStudentIds.size === 0}
+                >
+                  Hapus pilihan
+                </Button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+                {selectedStudentIds.size > 0 && (
+                  <>
+                    <span className="text-sm text-muted-foreground">
+                      {selectedStudentIds.size} siswa dipilih
+                    </span>
+                    <Button
+                      type="button"
+                      variant="gradient"
+                      size="sm"
+                      className="rounded-xl gap-1"
+                      onClick={openBulkEditDialog}
+                    >
+                      <ListChecks className="w-4 h-4" />
+                      Edit massal
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -726,14 +892,22 @@ const Students = () => {
           {paginatedStudents.map((student) => (
           <Card key={student.id} className="card-playful group">
             <CardContent className="p-5">
-              <div className="flex items-start justify-between mb-4">
-                <Avatar className="w-14 h-14 avatar-ring">
+              <div className="flex items-start gap-3 mb-4">
+                {canManageStudents ? (
+                  <div className="pt-1 shrink-0">
+                    <Checkbox
+                      checked={selectedStudentIds.has(student.id)}
+                      onCheckedChange={() => toggleStudentSelect(student.id)}
+                      aria-label={`Pilih ${student.name || "siswa"}`}
+                    />
+                  </div>
+                ) : null}
+                <Avatar className="w-14 h-14 avatar-ring shrink-0">
                   <AvatarImage src={student.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${student.name}`} />
                   <AvatarFallback className="bg-primary text-primary-foreground">
                     {student.name?.charAt(0) || "?"}
                   </AvatarFallback>
                 </Avatar>
-                {/* Score badge removed - can be added back when portfolio/grade data is available */}
               </div>
 
               <h3 className="font-display font-bold text-lg group-hover:text-primary transition-colors">
@@ -825,6 +999,135 @@ const Students = () => {
         </div>
       )}
 
+      {/* Bulk edit dialog */}
+      <Dialog
+        open={isBulkEditOpen}
+        onOpenChange={(open) => {
+          if (isBulkSaving) return;
+          setIsBulkEditOpen(open);
+          if (!open) setBulkSaveErrors({});
+        }}
+      >
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col gap-0 p-6">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2">
+              <ListChecks className="w-5 h-5 text-primary" />
+              Edit massal data siswa
+            </DialogTitle>
+            <DialogDescription>
+              Ubah NIS, nama, telepon, atau kelas untuk siswa yang dipilih. Perubahan disimpan per akun; baris yang gagal
+              ditandai agar bisa diperbaiki lalu disimpan lagi.
+            </DialogDescription>
+          </DialogHeader>
+
+          <ScrollArea className="flex-1 min-h-0 max-h-[55vh] -mx-2 px-2">
+            <div className="rounded-xl border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className="w-[120px]">NIS</TableHead>
+                    <TableHead>Nama</TableHead>
+                    <TableHead className="w-[130px]">Telepon</TableHead>
+                    <TableHead className="min-w-[160px] hidden md:table-cell">Email</TableHead>
+                    <TableHead className="min-w-[160px]">Kelas</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {bulkRows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      className={bulkSaveErrors[row.id] ? "bg-destructive/5" : undefined}
+                    >
+                      <TableCell className="align-top py-3">
+                        <Input
+                          className="rounded-lg h-9 text-sm"
+                          value={row.nis}
+                          onChange={(e) => updateBulkRow(row.id, { nis: e.target.value })}
+                          disabled={isBulkSaving}
+                          autoComplete="off"
+                        />
+                        {bulkSaveErrors[row.id] ? (
+                          <p className="text-xs text-destructive mt-1 leading-snug">{bulkSaveErrors[row.id]}</p>
+                        ) : null}
+                      </TableCell>
+                      <TableCell className="align-top py-3">
+                        <Input
+                          className="rounded-lg h-9 text-sm"
+                          value={row.name}
+                          onChange={(e) => updateBulkRow(row.id, { name: e.target.value })}
+                          disabled={isBulkSaving}
+                        />
+                      </TableCell>
+                      <TableCell className="align-top py-3">
+                        <Input
+                          className="rounded-lg h-9 text-sm"
+                          value={row.phone}
+                          onChange={(e) => updateBulkRow(row.id, { phone: e.target.value })}
+                          disabled={isBulkSaving}
+                          placeholder="Opsional"
+                        />
+                      </TableCell>
+                      <TableCell className="align-top py-3 hidden md:table-cell">
+                        <span className="text-xs text-muted-foreground break-all">{row.email || "—"}</span>
+                      </TableCell>
+                      <TableCell className="align-top py-3">
+                        <Select
+                          value={row.classId}
+                          onValueChange={(value) => updateBulkRow(row.id, { classId: value })}
+                          disabled={isBulkSaving}
+                        >
+                          <SelectTrigger className="rounded-lg h-9 text-sm">
+                            <SelectValue placeholder="Pilih kelas" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {allClasses.map((cls) => (
+                              <SelectItem key={cls.id} value={cls.id}>
+                                {cls.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </ScrollArea>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 pt-4 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl"
+              disabled={isBulkSaving}
+              onClick={() => setIsBulkEditOpen(false)}
+            >
+              Tutup
+            </Button>
+            <Button
+              type="button"
+              variant="gradient"
+              className="rounded-xl gap-2"
+              disabled={isBulkSaving || bulkRows.length === 0}
+              onClick={() => void handleBulkSave()}
+            >
+              {isBulkSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Menyimpan…
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-4 h-4" />
+                  Simpan semua
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-md">
@@ -864,6 +1167,17 @@ const Students = () => {
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 required 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>NIS</Label>
+              <Input
+                placeholder="Nomor Induk Siswa"
+                className="rounded-xl"
+                value={formData.nis}
+                onChange={(e) => setFormData({ ...formData, nis: e.target.value })}
+                required
+                autoComplete="off"
               />
             </div>
             <div className="space-y-2">
