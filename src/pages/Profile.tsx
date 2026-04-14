@@ -7,12 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Mail, User as UserIcon, Phone, MapPin, Calendar, Edit, Save, X, Loader2, Lock, Eye, EyeOff, KeyRound } from "lucide-react";
+import { Camera, Mail, User as UserIcon, Phone, MapPin, Calendar, Edit, Save, X, Loader2, Lock, Eye, EyeOff, KeyRound, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { authService } from "@/services/auth.service";
 import { userService } from "@/services/user.service";
 import { dashboardService } from "@/services/dashboard.service";
-import type { UpdateUserRequest, User } from "@/types/api";
+import { classService } from "@/services/class.service";
+import { getUserData } from "@/config/api";
+import type { UpdateUserRequest, User, Class } from "@/types/api";
 import { getApiErrorMessage } from "@/lib/api-error";
 
 const compressImage = (file: File): Promise<File> => {
@@ -72,6 +74,11 @@ const Profile = () => {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
+  /** Guru — kelas yang diampu (sinkron dengan user.classes) */
+  const [teacherClassList, setTeacherClassList] = useState<Class[]>([]);
+  const [loadingTeacherClasses, setLoadingTeacherClasses] = useState(false);
+  const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
+
   // Change password state
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
@@ -101,6 +108,7 @@ const Profile = () => {
           nis: userData.nis || "",
           nip: userData.nip || "",
         });
+        setSelectedClassIds(userData.classes?.map((c) => c.id) ?? []);
         if (userData.avatar) {
           setAvatarPreview(userData.avatar);
         }
@@ -142,6 +150,30 @@ const Profile = () => {
 
     fetchUserData();
   }, [toast]);
+
+  useEffect(() => {
+    if (!user || user.role !== "TEACHER") return;
+    let cancelled = false;
+    const load = async () => {
+      setLoadingTeacherClasses(true);
+      try {
+        const response = await classService.getClasses({ limit: 100 });
+        if (!response.success || !response.data) return;
+        const classList = Array.isArray(response.data)
+          ? response.data
+          : response.data.data || [];
+        if (!cancelled) setTeacherClassList(classList);
+      } catch (e) {
+        console.error("Error loading classes:", e);
+      } finally {
+        if (!cancelled) setLoadingTeacherClasses(false);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.role, user?.id]);
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -193,6 +225,10 @@ const Profile = () => {
         updateData.nip = formData.nip.trim();
       }
 
+      if (user.role === "TEACHER") {
+        updateData.classIds = selectedClassIds;
+      }
+
       if (avatarFile) {
         updateData.avatar = avatarFile;
       }
@@ -200,8 +236,22 @@ const Profile = () => {
       const response = await userService.updateUser(user.id, updateData);
       const updatedUser = response.data.user;
       setUser(updatedUser);
-      
-      // Update context user if needed
+      setSelectedClassIds(updatedUser.classes?.map((c) => c.id) ?? []);
+
+      const stored = getUserData();
+      if (stored && updatedUser) {
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            ...stored,
+            ...updatedUser,
+            accessToken: stored.accessToken,
+            refreshToken: stored.refreshToken,
+            role: (stored as { role?: string }).role ?? String(updatedUser.role).toLowerCase(),
+          }),
+        );
+      }
+
       if (updatedUser.avatar) {
         setAvatarPreview(updatedUser.avatar);
       }
@@ -209,7 +259,7 @@ const Profile = () => {
       setIsEditing(false);
       setAvatarFile(null);
       toast({
-        title: "Profile Disimpan! ✨",
+        title: "Profile disimpan",
         description: "Perubahan profile berhasil disimpan",
       });
     } catch (error: unknown) {
@@ -238,6 +288,7 @@ const Profile = () => {
       });
       setAvatarFile(null);
       setAvatarPreview(user.avatar);
+      setSelectedClassIds(user.classes?.map((c) => c.id) ?? []);
     }
     setIsEditing(false);
   };
@@ -483,6 +534,55 @@ const Profile = () => {
                   />
                 ) : (
                   <p className="text-foreground font-medium py-2">{formData.nip || "-"}</p>
+                )}
+              </div>
+            )}
+
+            {user.role === "TEACHER" && (
+              <div className="space-y-2 md:col-span-2">
+                <Label className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-muted-foreground" />
+                  Kelas yang diampu
+                </Label>
+                {isEditing ? (
+                  <div className="space-y-2 max-h-48 overflow-y-auto border rounded-xl p-3">
+                    {loadingTeacherClasses ? (
+                      <p className="text-sm text-muted-foreground">Memuat kelas...</p>
+                    ) : teacherClassList.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">Tidak ada kelas tersedia</p>
+                    ) : (
+                      teacherClassList.map((cls) => (
+                        <div key={cls.id} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={`profile-class-${cls.id}`}
+                            checked={selectedClassIds.includes(cls.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedClassIds([...selectedClassIds, cls.id]);
+                              } else {
+                                setSelectedClassIds(selectedClassIds.filter((id) => id !== cls.id));
+                              }
+                            }}
+                            className="w-4 h-4 rounded border-gray-300"
+                            disabled={isSaving}
+                          />
+                          <label
+                            htmlFor={`profile-class-${cls.id}`}
+                            className="text-sm font-medium cursor-pointer"
+                          >
+                            {cls.name}
+                          </label>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-foreground font-medium py-2">
+                    {user.classes && user.classes.length > 0
+                      ? user.classes.map((c) => c.name).join(", ")
+                      : "Belum memilih kelas"}
+                  </p>
                 )}
               </div>
             )}
