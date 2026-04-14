@@ -465,13 +465,27 @@ const Assignments = () => {
         const assignmentSubmissions = getSubmissionsForAssignment(
             assignment.id,
         );
-        const pendingCount = assignmentSubmissions.filter(
+
+        // Hitung hanya submission dari siswa yang masih berada di kelas assignment saat ini.
+        // Ini mencegah overcount jika ada siswa pindah kelas setelah mengumpulkan.
+        const assignmentClassIds = new Set(
+            assignment.classes?.map((ac) => ac.class?.id).filter(Boolean) || [],
+        );
+        const relevantSubmissions =
+            assignmentClassIds.size > 0
+                ? assignmentSubmissions.filter((s) => {
+                      const studentClassId = s.student?.classId;
+                      return !!studentClassId && assignmentClassIds.has(studentClassId);
+                  })
+                : assignmentSubmissions;
+
+        const pendingCount = relevantSubmissions.filter(
             (s) => s.status === "PENDING",
         ).length;
-        const revisionCount = assignmentSubmissions.filter(
+        const revisionCount = relevantSubmissions.filter(
             (s) => s.status === "REVISION",
         ).length;
-        const gradedCount = assignmentSubmissions.filter(
+        const gradedCount = relevantSubmissions.filter(
             (s) => s.status === "GRADED",
         ).length;
 
@@ -491,19 +505,18 @@ const Assignments = () => {
                 return sum;
             }, 0) || 0;
 
-        // If totalStudents is 0, use submissions count as minimum (at least those who submitted)
-        // But ideally, backend should provide the actual total
+        // If totalStudents is 0, use relevant submissions count as fallback minimum
         const finalTotal =
-            totalStudents > 0 ? totalStudents : assignmentSubmissions.length;
+            totalStudents > 0 ? totalStudents : relevantSubmissions.length;
 
         return {
             ...assignment,
-            submissions: assignmentSubmissions.length,
+            submissions: relevantSubmissions.length,
             total: finalTotal,
             pendingCount,
             revisionCount,
             gradedCount,
-            studentSubmissions: assignmentSubmissions,
+            studentSubmissions: relevantSubmissions,
         };
     };
 
@@ -2995,8 +3008,12 @@ const Assignments = () => {
                                                                     sub.grade,
                                                                     sub.revisionCount,
                                                                 )}
-                                                                {sub.status ===
-                                                                    "PENDING" && (
+                                                                {(sub.status ===
+                                                                    "PENDING" ||
+                                                                    sub.status ===
+                                                                        "REVISION" ||
+                                                                    sub.status ===
+                                                                        "GRADED") && (
                                                                     <Button
                                                                         variant="teal"
                                                                         size="sm"
@@ -3009,13 +3026,6 @@ const Assignments = () => {
                                                                         <Eye className="w-4 h-4 mr-1" />
                                                                         Review
                                                                     </Button>
-                                                                )}
-                                                                {sub.status ===
-                                                                    "REVISION" && (
-                                                                    <span className="text-xs text-accent whitespace-nowrap">
-                                                                        Menunggu
-                                                                        revisi
-                                                                    </span>
                                                                 )}
                                                             </div>
                                                         </div>
