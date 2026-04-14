@@ -84,20 +84,14 @@ export const userService = {
       if (data.classId) {
         formData.append('classId', data.classId);
       }
-      if (data.classIds && data.classIds.length > 0) {
-        // Append each classId separately for FormData
-        data.classIds.forEach((classId) => {
-          formData.append('classIds[]', classId);
-        });
+      if (data.classIds !== undefined) {
+        formData.append('classIdsJson', JSON.stringify(data.classIds));
       }
       if (data.nis !== undefined) {
         formData.append('nis', data.nis);
       }
       if (data.nip !== undefined) {
         formData.append('nip', data.nip);
-      }
-      if (data.classId) {
-        formData.append('classId', data.classId);
       }
 
       const response = await apiClient.put<ApiResponse<{ user: User }>>(`/users/${id}`, formData, {
@@ -108,10 +102,8 @@ export const userService = {
       });
       return response.data;
     } else {
-      // Use JSON for regular updates
-      // For classIds array, send as JSON array
-      const jsonData: UpdateUserRequest & { classIds?: string[] } = { ...data };
-      if (data.classIds && data.classIds.length > 0) {
+      const jsonData: UpdateUserRequest = { ...data };
+      if (data.classIds !== undefined) {
         jsonData.classIds = data.classIds;
       }
       const response = await apiClient.put<ApiResponse<{ user: User }>>(`/users/${id}`, jsonData);
